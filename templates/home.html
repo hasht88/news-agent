@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100/70">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>News Curation Agent</title>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', 'monospace']
+          },
+          colors: {
+            brandDark: '#0F172A',
+            brandBlue: '#2563EB'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+</head>
+<body class="min-h-full bg-[#F5F6F8] text-slate-800 antialiased">
+
+  <!-- TOP NAVIGATION BAR (STICKY AT TOP) -->
+  <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+    <div class="max-w-5xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
+      <!-- Brand / Logo -->
+      <a href="/" class="flex items-center gap-2.5 text-slate-900 hover:text-slate-700 transition-colors">
+        <div class="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xs">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/>
+            <path d="M18 14h-8"/>
+            <path d="M15 18h-5"/>
+            <path d="M10 6h8v4h-8V6Z"/>
+          </svg>
+        </div>
+        <span class="font-bold text-lg tracking-tight">News Curation Agent</span>
+      </a>
+
+      <!-- Navigation Tabs (Only Setting Tab) -->
+      <div class="flex items-center">
+        <a 
+          href="/setting" 
+          class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200/80 transition-all shadow-2xs"
+          title="Target Configuration Settings"
+        >
+          <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span>Setting</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- STICKY ACTION BAR (BELOW NAVBAR, STAYS VISIBLE ON SCROLL) -->
+  <div class="sticky top-16 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-[0_2px_10px_rgba(0,0,0,0.03)] py-3 transition-all">
+    <div class="max-w-5xl mx-auto px-4 sm:px-8 flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Left Side Action Buttons: Crawl & Filter -->
+      <div class="flex items-center gap-2.5">
+        <!-- Crawl Button -->
+        <form method="post" action="/crawl" class="inline">
+          <button 
+            type="submit"
+            class="bg-[#0F172A] hover:bg-[#1E293B] active:scale-[0.98] text-white font-medium text-xs sm:text-sm px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+            title="Crawl latest news from configured sources"
+          >
+            <span>Crawl</span>
+          </button>
+        </form>
+
+        <!-- Filter Button -->
+        <form method="post" action="/filter" class="inline">
+          <button 
+            type="submit"
+            class="bg-[#0F172A] hover:bg-[#1E293B] active:scale-[0.98] text-white font-medium text-xs sm:text-sm px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+            title="Filter news articles based on configured keywords"
+          >
+            <span>Filter</span>
+          </button>
+        </form>
+
+        {% if is_filtered %}
+        <a 
+          href="/" 
+          class="text-xs font-medium text-slate-500 hover:text-slate-800 underline decoration-slate-300 hover:decoration-slate-600 px-1 py-1 transition"
+        >
+          Reset Filter
+        </a>
+        {% endif %}
+      </div>
+
+      <!-- Right Side: Process Selected News Button -->
+      <div class="flex items-center gap-3">
+        <!-- Quick Select All / Counter Toggle -->
+        <button 
+          type="button" 
+          onclick="toggleSelectAll()" 
+          class="text-xs font-medium text-slate-500 hover:text-slate-800 transition select-none hidden sm:inline-block"
+        >
+          <span id="selectAllText">Select All</span>
+        </button>
+
+        <!-- Process Selected News Button (Triggers newsForm submission) -->
+        <button
+          type="submit"
+          form="newsForm"
+          class="bg-[#0F172A] hover:bg-[#1E293B] active:scale-[0.98] text-white font-medium text-xs sm:text-sm px-4 sm:px-5 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+        >
+          <span>Process Selected News</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- FILTER TAGS BAR (SELECTABLE & REMOVABLE TAGS) -->
+    <div id="filterTagsBar" class="max-w-5xl mx-auto px-4 sm:px-8 pt-2.5 mt-2.5 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-2.5">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0 flex items-center gap-1.5 select-none">
+          <span>Filter Tags:</span>
+        </span>
+        <div id="filterTagsList" class="flex flex-wrap items-center gap-1.5 min-h-[28px]">
+          <!-- Filter tag pills rendered dynamically -->
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <!-- Clear active filters button -->
+        <button
+          type="button"
+          id="clearFiltersBtn"
+          onclick="clearActiveFilters()"
+          class="hidden text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200/80 transition-all cursor-pointer select-none"
+        >
+          Clear filters
+        </button>
+
+        <!-- Reset all tags button -->
+        <button
+          type="button"
+          id="resetTagsBtn"
+          onclick="resetAllTags()"
+          class="text-xs font-medium text-slate-500 hover:text-slate-800 px-2.5 py-1 rounded-lg hover:bg-slate-100 border border-slate-200/60 transition-all cursor-pointer select-none"
+          title="Reset tags back to settings keywords"
+        >
+          Reset tags
+        </button>
+
+        <!-- Quick Add Tag Input -->
+        <div class="flex items-center gap-1">
+          <input
+            type="text"
+            id="newTagInput"
+            placeholder="+ Add tag..."
+            onkeydown="if(event.key === 'Enter') { event.preventDefault(); addNewTag(); }"
+            class="text-xs px-2.5 py-1 w-28 sm:w-36 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-blue-500 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none transition-all shadow-2xs"
+          />
+          <button
+            type="button"
+            onclick="addNewTag()"
+            class="text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-200 transition-colors font-medium cursor-pointer"
+            title="Add tag"
+          >
+            +
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="max-w-5xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
+
+    <!-- STATUS / FEEDBACK MESSAGE BANNER --
+    {% if status_msg %}
+    <div class="mb-6 p-4 bg-white rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between text-sm">
+      <div class="flex items-center gap-2.5 text-slate-700 font-medium">
+        <svg class="w-4 h-4 text-emerald-600 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+        </svg>
+        <span>{{ status_msg }}</span>
+      </div>
+      <a href="/" class="text-xs text-slate-400 hover:text-slate-600 transition">Dismiss</a>
+    </div>
+    {% endif %}
+
+    !-- HEADER / HERO -->
+    <header class="mb-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <h1 class="text-[24px] sm:text-[26px] font-bold text-slate-900 tracking-tight leading-tight">News Headlines</h1>
+          <p class="text-sm text-slate-500 mt-1 font-normal">Select news articles to process or filter by keywords</p>
+        </div>
+        {% if news %}
+        <div id="itemCountBadge" class="inline-flex items-center self-start sm:self-auto px-3 py-1 rounded-full border border-slate-200 bg-white text-xs font-medium text-slate-600 shadow-2xs font-mono-code">
+          {{ news|length }} items available
+        </div>
+        {% endif %}
+      </div>
+    </header>
+
+    <!-- NEWS SELECTION FORM -->
+    <form id="newsForm" method="post" action="/process">
+
+      <div class="flex flex-col gap-3">
+        {% for item in news %}
+        <label 
+          class="news-item flex items-center justify-between p-4 sm:px-5 sm:py-3.5 bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer group"
+          data-headline="{{ item.headline|lower }}"
+          data-tags="{{ (item.tags|join(',')|lower) if (item.tags and item.tags is iterable and item.tags is not string) else (item.tags|lower if item.tags else '') }}"
+        >
+          <!-- Tags Container (LTR) -->
+          <div class="flex flex-wrap items-center gap-1.5 w-[190px] min-w-[130px] shrink-0">
+            {% if item.tags %}
+              {% if item.tags is string %}
+                <span 
+                  onclick="event.stopPropagation(); selectTagDirectly('{{ item.tags }}')"
+                  class="inline-flex items-center px-2.5 py-1 rounded-full border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 text-[12px] font-medium text-slate-700 shadow-2xs transition-colors cursor-pointer"
+                  title="Click to filter by tag '{{ item.tags }}'"
+                >
+                  {{ item.tags }}
+                </span>
+              {% else %}
+                {% for tag in item.tags %}
+                  <span 
+                    onclick="event.stopPropagation(); selectTagDirectly('{{ tag }}')"
+                    class="inline-flex items-center px-2.5 py-1 rounded-full border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 text-[12px] font-medium text-slate-700 shadow-2xs transition-colors cursor-pointer"
+                    title="Click to filter by tag '{{ tag }}'"
+                  >
+                    {{ tag }}
+                  </span>
+                {% endfor %}
+              {% endif %}
+            {% endif %}
+          </div>
+
+          <!-- Headline (RTL for Arabic / localized text) with clickable URL Link and Source URL -->
+          <div class="flex-1 px-4 text-right text-[15px] font-medium text-slate-800 leading-relaxed [direction:rtl] overflow-wrap-anywhere">
+            {{ item.headline }}
+            {% if item.url %}
+            {% set base_url = item.source_url if item.source_url else ((item.url.split('://')[0] + '://' + item.url.split('://')[1].split('/')[0]) if (item.url and '://' in item.url) else item.url) %}
+            <span class="inline-flex items-center gap-1.5 align-middle [direction:ltr] mx-1.5">
+              <a
+                href="{{ base_url }}"
+                target="_blank"
+                rel="noopener noreferrer"
+                onclick="event.stopPropagation()"
+                class="inline-flex items-center text-xs font-normal text-slate-500 hover:text-slate-800 hover:underline px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200/80 border border-slate-200 transition-colors select-none font-mono-code"
+                title="Source: {{ base_url }}"
+              >
+                {{ base_url }}
+              </a>
+              <a
+                href="{{ item.url }}"
+                target="_blank"
+                rel="noopener noreferrer"
+                onclick="event.stopPropagation()"
+                class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline px-2 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 border border-blue-200/70 transition-colors select-none"
+                title="{{ item.url }}"
+              >
+                <span>Link</span>
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/>
+                  <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </a>
+            </span>
+            {% endif %}
+          </div>
+
+          <!-- Checkbox -->
+          <div class="flex items-center justify-center shrink-0 pl-2">
+            <input
+              type="checkbox"
+              name="selected_news"
+              value="{{ item.id }}"
+              class="news-checkbox w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500/20 focus:ring-2 cursor-pointer accent-blue-600 transition"
+            >
+          </div>
+        </label>
+        {% endfor %}
+      </div>
+
+      <!-- No Match Notice (hidden by default) -->
+      <div id="noFilterMatchNotice" class="hidden p-8 text-center bg-white rounded-2xl border border-slate-200 shadow-xs mt-3">
+        <svg class="w-8 h-8 text-slate-300 mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+        <p class="text-sm font-medium text-slate-700">No news articles match the selected filter tags</p>
+        <p class="text-xs text-slate-400 mt-1">Try selecting different tags or clearing active filters</p>
+        <button
+          type="button"
+          onclick="clearActiveFilters()"
+          class="mt-3 text-xs font-medium text-blue-600 hover:text-blue-700 underline cursor-pointer"
+        >
+          Clear active filters
+        </button>
+      </div>
+
+    </form>
+
+    <!-- SELECTED NEWS RESULTS -->
+    {% if selected_items %}
+    <section class="mt-12 bg-white rounded-[28px] border border-slate-200/90 shadow-[0_4px_30px_rgba(0,0,0,0.03)] p-6 sm:p-10 transition-all">
+      <header class="mb-6 pb-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900 tracking-tight leading-tight">Selected News</h2>
+          <p class="text-xs text-slate-500 mt-1">Processed news articles list</p>
+        </div>
+        <span class="inline-flex items-center px-3 py-1 rounded-full border border-blue-200 bg-blue-50 text-xs font-semibold text-blue-700 font-mono-code">
+          {{ selected_items|length }} selected
+        </span>
+      </header>
+
+      <div class="divide-y divide-slate-100">
+        {% for item in selected_items %}
+        <div class="py-4 first:pt-0 last:pb-0">
+          <div class="text-[15px] font-semibold text-slate-900 leading-relaxed [direction:rtl] text-right">
+            {{ item.headline }}
+          </div>
+          <div class="mt-2 flex items-center gap-1.5 text-xs text-slate-500 font-mono-code">
+            <span class="text-slate-400">URL:</span>
+            <a
+              href="{{ item.url }}"
+              target="_blank"
+              class="text-blue-600 hover:text-blue-700 hover:underline break-all"
+            >
+              {{ item.url }}
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+  </main>
+
+  <script>
+    let allSelected = false;
+    function toggleSelectAll() {
+      const visibleCheckboxes = Array.from(document.querySelectorAll(".news-item"))
+        .filter(item => item.style.display !== "none")
+        .map(item => item.querySelector(".news-checkbox"))
+        .filter(Boolean);
+
+      allSelected = !allSelected;
+      visibleCheckboxes.forEach(cb => cb.checked = allSelected);
+      document.getElementById("selectAllText").innerText = allSelected ? "Deselect All" : "Select All";
+    }
+
+    // Filter Tags System (Selectable & Removable)
+    let availableTags = [];
+    const activeTags = new Set();
+    let defaultKeywords = [];
+
+    // Merge tag lists while treating tags as case-insensitive duplicates
+    // (keeps the casing of the first occurrence encountered)
+    function dedupeTagsCaseInsensitive(...lists) {
+      const seen = new Map(); // lowercase -> original-cased tag
+      lists.forEach(list => {
+        list.forEach(tag => {
+          const key = tag.toLowerCase().trim();
+          if (key && !seen.has(key)) {
+            seen.set(key, tag);
+          }
+        });
+      });
+      return Array.from(seen.values());
+    }
+
+    // Collect tags from rendered news items in DOM
+    function collectTagsFromDOM() {
+      const foundTags = new Set();
+      document.querySelectorAll(".news-item").forEach(item => {
+        const tagAttr = item.getAttribute("data-tags");
+        if (tagAttr) {
+          tagAttr.split(",").forEach(t => {
+            const clean = t.trim();
+            if (clean) foundTags.add(clean);
+          });
+        }
+      });
+      return Array.from(foundTags);
+    }
+
+    // Render filter tag chips into #filterTagsList
+    function renderFilterTags() {
+      const container = document.getElementById("filterTagsList");
+      if (!container) return;
+
+      if (availableTags.length === 0) {
+        container.innerHTML = `<span class="text-xs text-slate-400 italic py-0.5 select-none">No filter tags available</span>`;
+        applyFilters();
+        return;
+      }
+
+      container.innerHTML = "";
+      availableTags.forEach(tag => {
+        const isSelected = activeTags.has(tag);
+
+        const chip = document.createElement("div");
+        chip.className = `filter-tag-chip inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-all select-none border ${
+          isSelected
+            ? "bg-slate-900 text-white border-slate-900 shadow-2xs ring-2 ring-slate-900/10"
+            : "bg-slate-100 text-slate-700 border-slate-200/80 hover:bg-slate-200/80 hover:border-slate-300"
+        }`;
+        chip.title = isSelected ? `Selected filter: '${tag}' (click to deselect)` : `Filter by '${tag}'`;
+
+        // Tag label text (clickable to toggle selection)
+        const textSpan = document.createElement("span");
+        textSpan.innerText = tag;
+        textSpan.className = "cursor-pointer";
+        textSpan.onclick = () => toggleTag(tag);
+        chip.appendChild(textSpan);
+
+        // Remove (X) button
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.title = `Remove '${tag}' filter tag`;
+        removeBtn.className = `p-0.5 rounded-full transition-colors ${
+          isSelected
+            ? "text-slate-300 hover:text-white hover:bg-white/20"
+            : "text-slate-400 hover:text-slate-700 hover:bg-slate-200"
+        }`;
+        removeBtn.innerHTML = `
+          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        `;
+        removeBtn.onclick = (e) => {
+          e.stopPropagation();
+          removeTag(tag);
+        };
+        chip.appendChild(removeBtn);
+
+        container.appendChild(chip);
+      });
+
+      applyFilters();
+    }
+
+    // Toggle a tag selection (Selectable)
+    function toggleTag(tag) {
+      if (activeTags.has(tag)) {
+        activeTags.delete(tag);
+      } else {
+        activeTags.add(tag);
+      }
+      renderFilterTags();
+    }
+
+    // Direct selection (e.g. clicking tag badge on an article)
+    function selectTagDirectly(tag) {
+      const existing = availableTags.find(t => t.toLowerCase() === tag.toLowerCase());
+      if (existing) {
+        activeTags.add(existing);
+      } else {
+        availableTags.push(tag);
+        activeTags.add(tag);
+      }
+      renderFilterTags();
+    }
+
+    // Remove a tag from available filters (Removable)
+    function removeTag(tag) {
+      availableTags = availableTags.filter(t => t !== tag);
+      activeTags.delete(tag);
+      renderFilterTags();
+    }
+
+    // Clear active filter selections
+    function clearActiveFilters() {
+      activeTags.clear();
+      renderFilterTags();
+    }
+
+    // Add a new filter tag dynamically
+    function addNewTag() {
+      const input = document.getElementById("newTagInput");
+      const val = input ? input.value.trim() : "";
+      if (val) {
+        const existing = availableTags.find(t => t.toLowerCase() === val.toLowerCase());
+        if (existing) {
+          activeTags.add(existing);
+        } else {
+          availableTags.push(val);
+          activeTags.add(val);
+        }
+        input.value = "";
+        renderFilterTags();
+      }
+    }
+
+    // Reset back to default keywords from settings
+    function resetAllTags() {
+      const domTags = collectTagsFromDOM();
+      const combined = dedupeTagsCaseInsensitive(defaultKeywords, domTags);
+      availableTags = combined.length > 0 ? combined : dedupeTagsCaseInsensitive(defaultKeywords);
+      activeTags.clear();
+      renderFilterTags();
+    }
+
+    // Apply filtering to news list items
+    function applyFilters() {
+      const items = document.querySelectorAll(".news-item");
+      let visibleCount = 0;
+
+      const clearBtn = document.getElementById("clearFiltersBtn");
+      if (clearBtn) {
+        if (activeTags.size > 0) {
+          clearBtn.classList.remove("hidden");
+        } else {
+          clearBtn.classList.add("hidden");
+        }
+      }
+
+      if (activeTags.size === 0) {
+        items.forEach(item => {
+          item.style.display = "";
+          visibleCount++;
+        });
+      } else {
+        const activeArr = Array.from(activeTags).map(t => t.toLowerCase().trim());
+        items.forEach(item => {
+          const headline = item.getAttribute("data-headline") || "";
+          const tags = item.getAttribute("data-tags") || "";
+          const combined = (headline + " " + tags).toLowerCase();
+
+          const matches = activeArr.some(tag => combined.includes(tag));
+          if (matches) {
+            item.style.display = "";
+            visibleCount++;
+          } else {
+            item.style.display = "none";
+          }
+        });
+      }
+
+      // Update item count badge
+      const badge = document.getElementById("itemCountBadge");
+      if (badge) {
+        if (activeTags.size === 0) {
+          badge.innerText = `${items.length} items available`;
+        } else {
+          badge.innerText = `${visibleCount} of ${items.length} items shown`;
+        }
+      }
+
+      // Show/hide empty state message
+      const emptyState = document.getElementById("noFilterMatchNotice");
+      if (emptyState) {
+        if (visibleCount === 0 && items.length > 0 && activeTags.size > 0) {
+          emptyState.classList.remove("hidden");
+        } else {
+          emptyState.classList.add("hidden");
+        }
+      }
+    }
+
+    // Initialize tags on load
+    async function initFilterTags() {
+      try {
+        const res = await fetch("/api/settings");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.keywords && data.keywords.length > 0) {
+            defaultKeywords = [...data.keywords];
+          }
+        }
+      } catch (e) {
+        console.warn("Could not fetch settings:", e);
+      }
+
+      const domTags = collectTagsFromDOM();
+      const combined = dedupeTagsCaseInsensitive(defaultKeywords, domTags);
+      availableTags = combined.length > 0 ? combined : dedupeTagsCaseInsensitive(defaultKeywords);
+
+      renderFilterTags();
+    }
+
+    document.addEventListener("DOMContentLoaded", initFilterTags);
+  </script>
+
+</body>
+</html>

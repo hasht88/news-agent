@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100/70">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Target Configuration</title>
+  
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', 'monospace']
+          },
+          colors: {
+            brandDark: '#0F172A',
+            brandBlue: '#2563EB'
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+</head>
+<body class="min-h-full flex items-center justify-center p-4 sm:p-8 bg-[#F5F6F8] text-slate-800 antialiased">
+
+  <!-- MAIN CARD CONTAINER -->
+  <main class="w-full max-w-[620px] bg-white rounded-[28px] border border-slate-200/90 shadow-[0_4px_30px_rgba(0,0,0,0.03)] p-8 sm:p-12 transition-all">
+    
+    <!-- CARD HEADER -->
+    <header class="mb-8">
+      <h1 class="text-[26px] font-bold text-slate-900 tracking-tight leading-tight">Target Configuration</h1>
+      <p class="text-sm text-slate-500 mt-1 font-normal">Specify URL and Keywords</p>
+    </header>
+
+    <!-- URLS SECTION -->
+    <section class="mb-9">
+      <label for="urlInput" class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-3">URLS</label>
+      
+      <!-- Add URL Input Bar -->
+      <div class="flex items-center justify-between border border-slate-200 rounded-xl px-4 py-2.5 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/15 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+        <input 
+          type="text" 
+          id="urlInput" 
+          placeholder="Enter URL..." 
+          class="w-full bg-transparent text-sm text-slate-800 placeholder-slate-400 focus:outline-none pr-3 font-mono-code"
+          onkeydown="if(event.key === 'Enter') handleAddUrl()"
+        />
+        <button 
+          type="button" 
+          onclick="handleAddUrl()" 
+          class="text-sm font-semibold text-blue-600 hover:text-blue-700 whitespace-nowrap transition-colors select-none"
+        >
+          + Add
+        </button>
+      </div>
+
+      <!-- URL List Container -->
+      <div id="urlListContainer" class="mt-4 divide-y divide-slate-100">
+        {% for url in settings.sources %}
+        <div class="py-3 flex items-center justify-between group transition-colors" data-url="{{ url }}">
+          <span class="font-mono-code text-[13.5px] text-slate-800 select-all">{{ url }}</span>
+          <button 
+            type="button" 
+            onclick="removeUrl(this)" 
+            class="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded focus:outline-none"
+            aria-label="Remove URL"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- KEYWORDS SECTION -->
+    <section class="mb-10">
+      <label for="keywordInput" class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-3">KEYWORDS</label>
+      
+      <!-- Add Keyword Input Bar -->
+      <div class="flex items-center justify-between border border-slate-200 rounded-xl px-4 py-2.5 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/15 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+        <input 
+          type="text" 
+          id="keywordInput" 
+          placeholder="Enter keyword..." 
+          class="w-full bg-transparent text-sm text-slate-800 placeholder-slate-400 focus:outline-none pr-3"
+          onkeydown="if(event.key === 'Enter') handleAddKeyword()"
+        />
+        <button 
+          type="button" 
+          onclick="handleAddKeyword()" 
+          class="text-sm font-semibold text-blue-600 hover:text-blue-700 whitespace-nowrap transition-colors select-none"
+        >
+          + Add
+        </button>
+      </div>
+
+      <!-- Keyword Badges Container -->
+      <div id="keywordsContainer" class="mt-4 flex flex-wrap gap-2.5 items-center">
+        {% for kw in settings.keywords %}
+        <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-200 bg-white text-[13px] font-medium text-slate-700 shadow-xs group transition-all" data-keyword="{{ kw }}">
+          <span>{{ kw }}</span>
+          <button 
+            type="button" 
+            onclick="removeKeyword(this)" 
+            class="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded focus:outline-none"
+            aria-label="Remove keyword"
+          >
+            <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- DIVIDER & FOOTER ACTION -->
+    <footer class="pt-6 border-t border-slate-100 flex items-center justify-between">
+      <!-- Status Feedback Indicator -->
+      <div id="statusMessage" class="text-xs text-slate-400 opacity-0 transition-opacity duration-300">
+        Changes saved
+      </div>
+
+      <!-- Save Changes Button -->
+      <button 
+        type="button" 
+        id="saveBtn"
+        onclick="saveChanges()" 
+        class="bg-[#0F172A] hover:bg-[#1E293B] active:scale-[0.98] text-white font-medium text-sm px-6 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+      >
+        <span id="saveBtnText">Save Changes</span>
+        <svg id="saveSpinner" class="hidden w-4 h-4 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+      </button>
+    </footer>
+
+  </main>
+
+  <!-- Client Script for Interactivity and Sync -->
+  <script>
+    let sources = [];
+    let keywords = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      syncStateFromDOM();
+    });
+
+    function syncStateFromDOM() {
+      sources = Array.from(document.querySelectorAll("#urlListContainer > div"))
+        .map(el => el.getAttribute("data-url") || el.querySelector("span")?.innerText?.trim())
+        .filter(Boolean);
+
+      keywords = Array.from(document.querySelectorAll("#keywordsContainer > div"))
+        .map(el => el.getAttribute("data-keyword") || el.querySelector("span")?.innerText?.trim())
+        .filter(Boolean);
+    }
+
+    function createRemoveIconSvg(size = 'w-4 h-4') {
+      return `
+        <svg class="${size}" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+        </svg>
+      `;
+    }
+
+    function handleAddUrl() {
+      const input = document.getElementById("urlInput");
+      let val = input.value.trim();
+      if (!val) return;
+
+      if (!val.startsWith("http://") && !val.startsWith("https://")) {
+        val = "https://" + val;
+      }
+
+      if (sources.includes(val)) {
+        showStatus("URL already exists in list", true);
+        return;
+      }
+
+      sources.push(val);
+      renderUrls();
+      input.value = "";
+      input.focus();
+    }
+
+    function removeUrl(btn) {
+      const item = btn.closest("[data-url]");
+      const url = item.getAttribute("data-url");
+      sources = sources.filter(s => s !== url);
+      renderUrls();
+    }
+
+    function renderUrls() {
+      const container = document.getElementById("urlListContainer");
+      container.innerHTML = sources.map(url => `
+        <div class="py-3 flex items-center justify-between group transition-colors" data-url="${escapeHtml(url)}">
+          <span class="font-mono-code text-[13.5px] text-slate-800 select-all">${escapeHtml(url)}</span>
+          <button 
+            type="button" 
+            onclick="removeUrl(this)" 
+            class="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded focus:outline-none"
+            aria-label="Remove URL"
+          >
+            ${createRemoveIconSvg('w-4 h-4')}
+          </button>
+        </div>
+      `).join("");
+    }
+
+    function handleAddKeyword() {
+      const input = document.getElementById("keywordInput");
+      let val = input.value.trim();
+      if (!val) return;
+
+      const items = val.split(",").map(k => k.trim()).filter(Boolean);
+      items.forEach(item => {
+        if (!keywords.some(k => k.toLowerCase() === item.toLowerCase())) {
+          keywords.push(item);
+        }
+      });
+
+      renderKeywords();
+      input.value = "";
+      input.focus();
+    }
+
+    function removeKeyword(btn) {
+      const item = btn.closest("[data-keyword]");
+      const kw = item.getAttribute("data-keyword");
+      keywords = keywords.filter(k => k !== kw);
+      renderKeywords();
+    }
+
+    function renderKeywords() {
+      const container = document.getElementById("keywordsContainer");
+      container.innerHTML = keywords.map(kw => `
+        <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-200 bg-white text-[13px] font-medium text-slate-700 shadow-xs group transition-all" data-keyword="${escapeHtml(kw)}">
+          <span>${escapeHtml(kw)}</span>
+          <button 
+            type="button" 
+            onclick="removeKeyword(this)" 
+            class="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded focus:outline-none"
+            aria-label="Remove keyword"
+          >
+            ${createRemoveIconSvg('w-3.5 h-3.5')}
+          </button>
+        </div>
+      `).join("");
+    }
+
+    async function saveChanges() {
+      const btn = document.getElementById("saveBtn");
+      const btnText = document.getElementById("saveBtnText");
+      const spinner = document.getElementById("saveSpinner");
+
+      btn.disabled = true;
+      btnText.innerText = "Saving...";
+      spinner.classList.remove("hidden");
+
+      try {
+        const response = await fetch("/api/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sources, keywords })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          sources = data.settings.sources;
+          keywords = data.settings.keywords;
+          renderUrls();
+          renderKeywords();
+          showStatus("Changes saved successfully!");
+        } else {
+          showStatus("Failed to save changes", true);
+        }
+      } catch (err) {
+        showStatus("Network error occurred", true);
+      } finally {
+        btn.disabled = false;
+        btnText.innerText = "Save Changes";
+        spinner.classList.add("hidden");
+      }
+    }
+
+    function showStatus(msg, isError = false) {
+      const el = document.getElementById("statusMessage");
+      el.innerText = msg;
+      el.className = `text-xs transition-opacity duration-300 ${isError ? 'text-rose-500 font-medium' : 'text-emerald-600 font-medium'}`;
+      el.style.opacity = "1";
+      setTimeout(() => {
+        el.style.opacity = "0";
+      }, 3000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
