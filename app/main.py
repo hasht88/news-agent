@@ -1,4 +1,4 @@
-import re, os
+import re, os, json
 import httpx
 from bs4 import BeautifulSoup, SoupStrainer
 from fastapi import FastAPI, Request, HTTPException, Form
@@ -6,13 +6,14 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 import pickle
+from vercel.blob import BlobClient
 from urllib.parse import urljoin
 from app.models import AgentSettings
 from app.storage import load_settings, save_settings
 
-
+client = BlobClient()
 if os.environ.get("VERCEL"):
-    DATA_DIR = Path("/tmp/data")
+    DATA_DIR = Path("data")
 else:
     DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
@@ -20,7 +21,8 @@ DATA_FILE = DATA_DIR / "links.pkl"
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 def ensure_data_dir():
-    DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
+    if not os.environ.get("VERCEL"):
+        DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(
     title="News Curation Agent",
@@ -62,23 +64,53 @@ def crawl(sources, header):
     print("Removing duplicates")
     href_list = [dict(t) for t in {tuple(d.items()) for d in href_list}]
     ensure_data_dir()
-    with open(DATA_FILE, 'wb') as f:
-        pickle.dump(href_list, f)
+    if os.environ.get("VERCEL"):
+        try:
+            client.put(
+                "data/links.json",
+                href_list,
+                access="private",  # or "public" — now required
+                content_type="application/json",
+                overwrite=True)
+        except Exception as e:
+            print(f"Error encountered: {e}")
+    else:
+        try:
+            with open(DATA_FILE, 'wb') as f:
+                pickle.dump(href_list, f)
+        except Exception as e:
+            print(f"Error encountered: {e}")
+
     for index, item in enumerate(href_list):
         item["id"] = index
     return href_list
 
 def load_news_data():
-    try:
-        ensure_data_dir()
-        with open(DATA_FILE, "rb") as f:
-            data = pickle.load(f)
-        for index, item in enumerate(data):
-            item["id"] = index
-        return data
-    except Exception as e:
-        print(f"Error loading candidates: {e}")
-        return []
+    if os.environ.get("VERCEL"):
+        try:
+            client.head("data/settings.json")
+            data = client.get("data/links.json", access='private')
+            print("Loading data from Vercel Object Blob")
+            data = json.loads(data.content)
+            for index, item in enumerate(data):
+                item["id"] = index
+            return data
+
+        except Exception as e:
+            print(f"Error loading candidates: {e}")
+            return []
+
+    else:
+        try:
+            ensure_data_dir()
+            with open(DATA_FILE, "rb") as f:
+                data = pickle.load(f)
+            for index, item in enumerate(data):
+                item["id"] = index
+            return data
+        except Exception as e:
+            print(f"Error loading candidates: {e}")
+            return []
 
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))

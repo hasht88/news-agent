@@ -12,5 +12,4 @@ dependencies = [
     "python-multipart>=0.0.32",
     "uvicorn>=0.52.4",
     "vercel>=0.10.0",
-    "vercel-blob>=0.4.2",
 ]
