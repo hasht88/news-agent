@@ -9,7 +9,7 @@ import pickle
 from vercel.blob import BlobClient
 from urllib.parse import urljoin
 from app.models import AgentSettings
-from app.storage import load_settings, save_settings
+from app.storage import load_settings, save_settings, is_blob_configured
 
 client = BlobClient()
 if os.environ.get("VERCEL"):
@@ -65,15 +65,18 @@ def crawl(sources, header):
     href_list = [dict(t) for t in {tuple(d.items()) for d in href_list}]
     ensure_data_dir()
     if os.environ.get("VERCEL"):
-        try:
-            client.put(
-                "data/links.json",
-                href_list,
-                access="private",  # or "public" — now required
-                content_type="application/json",
-                overwrite=True)
-        except Exception as e:
-            print(f"Error encountered: {e}")
+        if not is_blob_configured():
+            print("Notice: Vercel Blob token not configured. Skipping upload to blob.")
+        else:
+            try:
+                client.put(
+                    "data/links.json",
+                    json.dumps(href_list),
+                    access="private",  # or "public" — now required
+                    content_type="application/json",
+                    overwrite=True)
+            except Exception as e:
+                print(f"Error encountered: {e}")
     else:
         try:
             with open(DATA_FILE, 'wb') as f:
@@ -87,10 +90,12 @@ def crawl(sources, header):
 
 def load_news_data():
     if os.environ.get("VERCEL"):
+        if not is_blob_configured():  # <--- MISSING CHECK
+            print("Error: Vercel Blob token not configured. Cannot load news data.")
+            return []
+
         try:
-            client.head("data/settings.json")
             data = client.get("data/links.json", access='private')
-            print("Loading data from Vercel Object Blob")
             data = json.loads(data.content)
             for index, item in enumerate(data):
                 item["id"] = index
