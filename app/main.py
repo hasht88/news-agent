@@ -38,8 +38,9 @@ def crawl(sources, header):
     for source in sources:
         reqs = httpx.get(source, headers=header, timeout=30)
         if not reqs.status_code == 200:
-            print(f"source: {source} | status_code: {reqs.status_code}. Using Playwright")
+            print(f"source: {source} | status_code: {reqs.status_code}.")
             with sync_playwright() as p:
+                print("Using playwright...")
                 browser = p.chromium.launch(headless=True)
                 context = browser.new_context(
                     user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -89,7 +90,6 @@ def crawl(sources, header):
                 if href == source:
                     continue
                 href_list.append({'headline': title, 'url': href})
-                print(f"headline: {title} \nurl: {href}")
         print(f"{source} crawled")
         print("***************************************")
     print("Removing duplicates")
