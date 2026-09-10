@@ -57,8 +57,6 @@ def crawl(sources, header):
                 if href == source:
                     continue
                 href_list.append({'headline': title, 'url': href})
-                # if source == "https://www.dawn.com":
-                print(f"headline: {title} \nurl: {href}")
         print(f"{source} crawled")
         print("***************************************")
     print("Removing duplicates")
