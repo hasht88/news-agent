@@ -10,6 +10,7 @@ from vercel.blob import BlobClient
 from urllib.parse import urljoin
 from app.models import AgentSettings
 from app.storage import load_settings, save_settings, is_blob_configured
+from playwright.sync_api import sync_playwright
 
 client = BlobClient()
 if os.environ.get("VERCEL"):
@@ -36,6 +37,36 @@ def crawl(sources, header):
     href_list = []
     for source in sources:
         reqs = httpx.get(source, headers=header, timeout=30)
+        if not reqs.status_code == 200:
+            print(f"source: {source} | status_code: {reqs.status_code}. Using Playwright")
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                context = browser.new_context(
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                               "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                    viewport={"width": 1280, "height": 800},
+                )
+                page = context.new_page()
+                page.goto(source, wait_until="domcontentloaded", timeout=30000)
+                links = page.locator("a").evaluate_all("els => els.map(el => ({href: el.href, title: el.innerText.trim()}))")
+                for link in links:
+                    if link['title']:
+                        title = link['title']
+                        title = re.sub(r'\s+', ' ', title).strip()
+                        title = re.sub(r'^\d{1,2}:\d{2}\s*', '', title)
+                        title = title.replace('“', '"').replace('”', '"').replace("’", "'").replace("‘", "'")
+                        title = re.sub(r'[\u064B-\u065F\u0670]', '', title)
+                        title = re.sub(r'[\.\u2026\s]+$', '', title)
+                        if len(title) < 30:
+                            continue
+                        href = link['href']
+                        href = urljoin(source, href)
+                        source = source.rstrip('/')
+                        href = href.rstrip('/')
+                        if href == source:
+                            continue
+                        href_list.append({'headline': title, 'url': href})
+                browser.close()
         soup = BeautifulSoup(reqs.text, 'html.parser', parse_only=SoupStrainer('a'))
         for link in soup.find_all('a'):
             if link.get_text(strip=True):
@@ -53,11 +84,11 @@ def crawl(sources, header):
                 # print(len(title))
                 href = link.get('href')
                 href = urljoin(source, href)
+                source = source.rstrip('/')
                 href = href.rstrip('/')
                 if href == source:
                     continue
                 href_list.append({'headline': title, 'url': href})
-                # if source == "https://www.dawn.com":
                 print(f"headline: {title} \nurl: {href}")
         print(f"{source} crawled")
         print("***************************************")
