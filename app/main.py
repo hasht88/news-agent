@@ -49,15 +49,14 @@ def crawl(sources, header):
                 title = re.sub(r'[\.\u2026\s]+$', '', title)
                 if len(title) < 30:
                     continue
-                # print(title)
-                # print(len(title))
                 href = link.get('href')
                 href = urljoin(source, href)
                 href = href.rstrip('/')
                 if href == source:
                     continue
                 href_list.append({'headline': title, 'url': href})
-        print(f"{source} crawled")
+        if reqs.status_code == 200:
+            print(f"{source} crawled")
         print("***************************************")
     print("Removing duplicates")
     href_list = [dict(t) for t in {tuple(d.items()) for d in href_list}]
