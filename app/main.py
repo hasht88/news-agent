@@ -32,26 +32,28 @@ app = FastAPI(
 
 custom_headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
                   'Accept-Language': 'da, en-gb, en'}
+
 dawn_headers = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Sec-Ch-Ua": '"Chromium";v="128", "Not;A=Brand";v="24", "Google Chrome";v="128"',
-    "Sec-Ch-Ua-Mobile": "?0",
-    "Sec-Ch-Ua-Platform": '"macOS"',
-    "Sec-Fetch-Dest": "document",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-Site": "none",
-    "Sec-Fetch-User": "?1",
-    "Upgrade-Insecure-Requests": "1",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+"Accept-Language": "en-US,en;q=0.9",
+"Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+"Sec-Ch-Ua-Mobile": "?0",
+"Sec-Ch-Ua-Platform": '"macOS"',
+"Sec-Fetch-Dest": "document",
+"Sec-Fetch-Mode": "navigate",
+"Sec-Fetch-Site": "none",
+"Sec-Fetch-User": "?1",
+"Upgrade-Insecure-Requests": "1",
 }
+
 def crawl(sources, header):
     href_list = []
     for source in sources:
         resps = httpx.get(source, headers=header, timeout=30)
         if not resps.status_code == 200:
             print(f"source: {source} | status_code: {resps.status_code}. Using curl_cffi")
-            resps = requests.get(source, impersonate="chrome128", timeout=30, headers=dawn_headers)
+            resps = requests.get(source, impersonate="chrome124", timeout=30, headers=dawn_headers)
             print(f"source: {source} | curl_cffi status: {resps.status_code} | bytes: {resps.text}")
         soup = BeautifulSoup(resps.text, 'html.parser', parse_only=SoupStrainer('a'))
         for link in soup.find_all('a'):
