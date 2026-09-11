@@ -5,7 +5,6 @@ from fastapi import FastAPI, Request, HTTPException, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
-import pickle
 from vercel.blob import BlobClient
 from urllib.parse import urljoin
 from app.models import AgentSettings
@@ -17,7 +16,7 @@ if os.environ.get("VERCEL"):
 else:
     DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
-DATA_FILE = DATA_DIR / "links.pkl"
+DATA_FILE = DATA_DIR / "links.json"
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 def ensure_data_dir():
@@ -52,9 +51,17 @@ def crawl(sources, header):
     for source in sources:
         resps = httpx.get(source, headers=header, timeout=30)
         if not resps.status_code == 200:
-            print(f"source: {source} | status_code: {resps.status_code}. Using curl_cffi")
-            resps = requests.get(source, impersonate="chrome124", timeout=30, headers=dawn_headers)
-            print(f"source: {source} | curl_cffi status: {resps.status_code} | bytes: {resps.text}")
+            print(f"source: {source} | status_code: {resps.status_code}. Using curl_cffi for crawling")
+            try:
+                resps = requests.get(source, impersonate="chrome124", timeout=30, headers=dawn_headers)
+                if not resps.status_code == 200:
+                    print(f"source: {source} | curl_cffi status: {resps.status_code}")
+                    print(f"source: {source} not been able to crawl")
+                    continue
+            except Exception as e:
+                print(f"curl_cffi error on {source}: {e}")
+                continue
+        base_source = source.rstrip('/')
         soup = BeautifulSoup(resps.text, 'html.parser', parse_only=SoupStrainer('a'))
         for link in soup.find_all('a'):
             if link.get_text(strip=True):
@@ -69,13 +76,12 @@ def crawl(sources, header):
                 if len(title) < 30:
                     continue
                 href = link.get('href')
-                href = urljoin(source, href)
-                source = source.rstrip('/')
-                href = href.rstrip('/')
-                if href == source:
+                href = urljoin(base_source, href).rstrip('/')
+                if href == base_source:
                     continue
                 href_list.append({'headline': title, 'url': href})
-        print(f"{source} crawled")
+        if resps.status_code == 200:
+            print(f"{base_source} crawled")
         print("***************************************")
     print("Removing duplicates")
     href_list = [dict(t) for t in {tuple(d.items()) for d in href_list}]
@@ -95,8 +101,8 @@ def crawl(sources, header):
                 print(f"Error encountered: {e}")
     else:
         try:
-            with open(DATA_FILE, 'wb') as f:
-                pickle.dump(href_list, f)
+            with open(DATA_FILE, "w", encoding="utf-8") as f:
+                json.dump(href_list, f, indent=2, ensure_ascii=False)
         except Exception as e:
             print(f"Error encountered: {e}")
 
@@ -124,8 +130,10 @@ def load_news_data():
     else:
         try:
             ensure_data_dir()
-            with open(DATA_FILE, "rb") as f:
-                data = pickle.load(f)
+            if not DATA_FILE.exists():
+                return []
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
             for index, item in enumerate(data):
                 item["id"] = index
             return data
