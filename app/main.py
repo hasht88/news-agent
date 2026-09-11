@@ -55,12 +55,12 @@ def crawl(sources, header):
             print(f"source: {source} | status_code: {resps.status_code}. Using curl_cffi")
             try:
                 resps = requests.get(source, impersonate="chrome124", timeout=30, headers=dawn_headers)
-                print(f"source: {source} | curl_cffi status: {resps.status_code}")
-                print(f"curl_cffi error on {source}: {e}")
+                if not resps.status_code == 200:
+                    print(f"source: {source} | curl_cffi status: {resps.status_code}")
+                    print(f"source: {source} not been able to crawl")
             except Exception as e:
                 print(f"curl_cffi error on {source}: {e}")
                 continue
-
         soup = BeautifulSoup(resps.text, 'html.parser', parse_only=SoupStrainer('a'))
         for link in soup.find_all('a'):
             if link.get_text(strip=True):
@@ -81,7 +81,8 @@ def crawl(sources, header):
                 if href == source:
                     continue
                 href_list.append({'headline': title, 'url': href})
-        print(f"{source} crawled")
+        if resps.status_code == 200:
+            print(f"{source} crawled")
         print("***************************************")
     print("Removing duplicates")
     href_list = [dict(t) for t in {tuple(d.items()) for d in href_list}]
