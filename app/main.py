@@ -68,28 +68,29 @@ def crawl(sources, header):
                             continue
                         href_list.append({'headline': title, 'url': href})
                 browser.close()
-        soup = BeautifulSoup(reqs.text, 'html.parser', parse_only=SoupStrainer('a'))
-        for link in soup.find_all('a'):
-            if link.get_text(strip=True):
-                if link.find_parent(["figure", "figcaption"]):
-                    continue
-                title =link.get_text(strip=False)
-                title = re.sub(r'\s+', ' ', title).strip()
-                title = re.sub(r'^\d{1,2}:\d{2}\s*', '', title)
-                title = title.replace('“', '"').replace('”', '"').replace("’", "'").replace("‘", "'")
-                title = re.sub(r'[\u064B-\u065F\u0670]', '', title)
-                title = re.sub(r'[\.\u2026\s]+$', '', title)
-                if len(title) < 30:
-                    continue
-                # print(title)
-                # print(len(title))
-                href = link.get('href')
-                href = urljoin(source, href)
-                source = source.rstrip('/')
-                href = href.rstrip('/')
-                if href == source:
-                    continue
-                href_list.append({'headline': title, 'url': href})
+        else:
+            soup = BeautifulSoup(reqs.text, 'html.parser', parse_only=SoupStrainer('a'))
+            for link in soup.find_all('a'):
+                if link.get_text(strip=True):
+                    if link.find_parent(["figure", "figcaption"]):
+                        continue
+                    title =link.get_text(strip=False)
+                    title = re.sub(r'\s+', ' ', title).strip()
+                    title = re.sub(r'^\d{1,2}:\d{2}\s*', '', title)
+                    title = title.replace('“', '"').replace('”', '"').replace("’", "'").replace("‘", "'")
+                    title = re.sub(r'[\u064B-\u065F\u0670]', '', title)
+                    title = re.sub(r'[\.\u2026\s]+$', '', title)
+                    if len(title) < 30:
+                        continue
+                    # print(title)
+                    # print(len(title))
+                    href = link.get('href')
+                    href = urljoin(source, href)
+                    source = source.rstrip('/')
+                    href = href.rstrip('/')
+                    if href == source:
+                        continue
+                    href_list.append({'headline': title, 'url': href})
         print(f"{source} crawled")
         print("***************************************")
     print("Removing duplicates")
