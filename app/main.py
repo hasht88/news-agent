@@ -53,8 +53,13 @@ def crawl(sources, header):
         resps = httpx.get(source, headers=header, timeout=30)
         if not resps.status_code == 200:
             print(f"source: {source} | status_code: {resps.status_code}. Using curl_cffi")
-            resps = requests.get(source, impersonate="chrome124", timeout=30, headers=dawn_headers)
-            print(f"source: {source} | curl_cffi status: {resps.status_code} | bytes: {resps.text}")
+            try:
+                resps = requests.get(source, impersonate="chrome124", timeout=30, headers=dawn_headers)
+                print(f"source: {source} | curl_cffi status: {resps.status_code} | bytes: {len(resps.text)}")
+            except Exception as e:
+                print(f"curl_cffi error on {source}: {e}")
+                continue
+
         soup = BeautifulSoup(resps.text, 'html.parser', parse_only=SoupStrainer('a'))
         for link in soup.find_all('a'):
             if link.get_text(strip=True):
