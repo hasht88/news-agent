@@ -55,7 +55,8 @@ def crawl(sources, header):
             print(f"source: {source} | status_code: {resps.status_code}. Using curl_cffi")
             try:
                 resps = requests.get(source, impersonate="chrome124", timeout=30, headers=dawn_headers)
-                print(f"source: {source} | curl_cffi status: {resps.status_code} | bytes: {len(resps.text)}")
+                print(f"source: {source} | curl_cffi status: {resps.status_code}")
+                print(f"curl_cffi error on {source}: {e}")
             except Exception as e:
                 print(f"curl_cffi error on {source}: {e}")
                 continue
