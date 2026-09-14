@@ -48,26 +48,44 @@ dawn_headers = {
 
 def crawl(sources, header):
     href_list = []
+    crawl_stats = {
+        "successful": [],
+        "failed": []
+    }
     for source in sources:
-        resps = httpx.get(source, headers=header, timeout=30)
-        if not resps.status_code == 200:
-            print(f"source: {source} | status_code: {resps.status_code}. Using curl_cffi for crawling")
-            try:
-                resps = requests.get(source, impersonate="chrome124", timeout=30, headers=dawn_headers)
-                if not resps.status_code == 200:
-                    print(f"source: {source} | curl_cffi status: {resps.status_code}")
-                    print(f"source: {source} not been able to crawl")
-                    continue
-            except Exception as e:
-                print(f"curl_cffi error on {source}: {e}")
-                continue
         base_source = source.rstrip('/')
+        source_count = 0
+        failure_reason = None
+
+        try:
+            resps = httpx.get(source, headers=header, timeout=30)
+            if not resps.status_code == 200:
+                print(f"source: {source} | status_code: {resps.status_code}. Using curl_cffi for crawling")
+                try:
+                    resps = requests.get(source, impersonate="chrome124", timeout=30, headers=dawn_headers)
+                    if not resps.status_code == 200:
+                        print(f"source: {source} | curl_cffi status: {resps.status_code}")
+                        print(f"source: {source} not been able to crawl")
+                        failure_reason = f"{resps.status_code} Error"
+                        crawl_stats["failed"].append({"source": source, "reason": failure_reason})
+                        continue
+                except Exception as e:
+                    print(f"curl_cffi error on {source}: {e}")
+                    failure_reason = "Connection Error"
+                    crawl_stats["failed"].append({"source": source, "reason": failure_reason})
+                    continue
+        except Exception as e:
+            print(f"httpx error on {source}: {e}")
+            failure_reason = "Connection Error"
+            crawl_stats["failed"].append({"source": source, "reason": failure_reason})
+            continue
+
         soup = BeautifulSoup(resps.text, 'html.parser', parse_only=SoupStrainer('a'))
         for link in soup.find_all('a'):
             if link.get_text(strip=True):
                 if link.find_parent(["figure", "figcaption"]):
                     continue
-                title =link.get_text(strip=False)
+                title = link.get_text(strip=False)
                 title = re.sub(r'\s+', ' ', title).strip()
                 title = re.sub(r'^\d{1,2}:\d{2}\s*', '', title)
                 title = title.replace('“', '"').replace('”', '"').replace("’", "'").replace("‘", "'")
@@ -80,9 +98,13 @@ def crawl(sources, header):
                 if href == base_source:
                     continue
                 href_list.append({'headline': title, 'url': href})
+                source_count += 1
+
         if resps.status_code == 200:
-            print(f"{base_source} crawled")
+            print(f"{base_source} crawled ({source_count} items)")
+            crawl_stats["successful"].append({"source": source, "count": source_count})
         print("***************************************")
+
     print("Removing duplicates")
     href_list = [dict(t) for t in {tuple(d.items()) for d in href_list}]
     ensure_data_dir()
@@ -108,7 +130,7 @@ def crawl(sources, header):
 
     for index, item in enumerate(href_list):
         item["id"] = index
-    return href_list
+    return {"news": href_list, "stats": crawl_stats}
 
 def load_news_data():
     if os.environ.get("VERCEL"):
@@ -167,13 +189,14 @@ async def setting_page(request: Request):
 async def crawl_news(request: Request):
     settings = load_settings()
     sources = settings.sources
-    news = crawl(sources, custom_headers)
+    crawl_result = crawl(sources, custom_headers)
     return templates.TemplateResponse(
         request=request,
         name="home.html",
         context={
-            "news": news,
-            "status_msg": "Crawled and refreshed news sources successfully!"
+            "news": crawl_result["news"],
+            "crawl_stats": crawl_result["stats"],
+            "status_msg": "Crawled and refreshed news sources!"
         }
     )
 
