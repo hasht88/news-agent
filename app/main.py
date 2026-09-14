@@ -148,7 +148,7 @@ def crawl(sources, header):
             print(f"{base_source} crawled ({source_count} items)")
             crawl_stats["successful"].append({"source": source, "count": source_count})
         print("***************************************")
-
+    # deduping
     href_list = [dict(t) for t in {tuple(d.items()) for d in href_list}]
     href_list = merge_by_url(href_list)
     ensure_data_dir()
