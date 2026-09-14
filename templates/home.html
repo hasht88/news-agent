@@ -80,13 +80,19 @@
       <!-- Left Side Action Buttons: Crawl & Filter -->
       <div class="flex items-center gap-2.5">
         <!-- Crawl Button -->
-        <form method="post" action="/crawl" class="inline">
+        <form method="post" action="/crawl" class="inline" onsubmit="handleCrawlSubmit(this)">
           <button 
             type="submit"
-            class="bg-[#0F172A] hover:bg-[#1E293B] active:scale-[0.98] text-white font-medium text-xs sm:text-sm px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
-            title="Crawl latest news from configured sources"
+            id="crawlBtn"
+            class="{% if crawl_stats %}bg-slate-200 hover:bg-slate-300 text-slate-700 border border-slate-300/80 shadow-2xs{% else %}bg-[#0F172A] hover:bg-[#1E293B] text-white shadow-sm{% endif %} active:scale-[0.98] font-medium text-xs sm:text-sm px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100"
+            title="{% if crawl_stats %}Crawled successfully. Click to crawl again{% else %}Crawl latest news from configured sources{% endif %}"
           >
-            <span>Crawl</span>
+            <!-- Inline Spinner SVG (hidden by default, shown when crawling) -->
+            <svg id="crawlSpinner" class="hidden animate-spin h-3.5 w-3.5 {% if crawl_stats %}text-slate-700{% else %}text-white{% endif %}" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span id="crawlBtnText">{% if crawl_stats %}Crawled{% else %}Crawl{% endif %}</span>
           </button>
         </form>
 
@@ -94,10 +100,10 @@
         <form method="post" action="/filter" class="inline">
           <button 
             type="submit"
-            class="bg-[#0F172A] hover:bg-[#1E293B] active:scale-[0.98] text-white font-medium text-xs sm:text-sm px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
-            title="Filter news articles based on configured keywords"
+            class="{% if is_filtered %}bg-slate-200 hover:bg-slate-300 text-slate-700 border border-slate-300/80 shadow-2xs{% else %}bg-[#0F172A] hover:bg-[#1E293B] text-white shadow-sm{% endif %} active:scale-[0.98] font-medium text-xs sm:text-sm px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer"
+            title="{% if is_filtered %}Filtered articles by configured keywords{% else %}Filter news articles based on configured keywords{% endif %}"
           >
-            <span>Filter</span>
+            <span>{% if is_filtered %}Filtered{% else %}Filter{% endif %}</span>
           </button>
         </form>
 
@@ -728,6 +734,24 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+    }
+
+    // Crawl Button Form Submit Handler (Loading state)
+    function handleCrawlSubmit(form) {
+      const btn = document.getElementById("crawlBtn");
+      const spinner = document.getElementById("crawlSpinner");
+      const text = document.getElementById("crawlBtnText");
+
+      if (btn) {
+        btn.disabled = true;
+      }
+      if (spinner) {
+        spinner.classList.remove("hidden");
+      }
+      if (text) {
+        text.innerText = "Crawling...";
+      }
+      return true;
     }
 
     document.addEventListener("DOMContentLoaded", initFilterTags);

@@ -68,16 +68,19 @@ def crawl(sources, header):
                         print(f"source: {source} not been able to crawl")
                         failure_reason = f"{resps.status_code} Error"
                         crawl_stats["failed"].append({"source": source, "reason": failure_reason})
+                        print("***************************************")
                         continue
                 except Exception as e:
                     print(f"curl_cffi error on {source}: {e}")
                     failure_reason = "Connection Error"
                     crawl_stats["failed"].append({"source": source, "reason": failure_reason})
+                    print("***************************************")
                     continue
         except Exception as e:
             print(f"httpx error on {source}: {e}")
             failure_reason = "Connection Error"
             crawl_stats["failed"].append({"source": source, "reason": failure_reason})
+            print("***************************************")
             continue
 
         soup = BeautifulSoup(resps.text, 'html.parser', parse_only=SoupStrainer('a'))
