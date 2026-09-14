@@ -299,17 +299,21 @@ async def get_settings():
 
 @app.post("/api/settings")
 async def save_all_settings(settings: AgentSettings):
+    clean_languages = [l.strip() for l in settings.languages if l.strip()]
     clean_sources = [s.strip() for s in settings.sources if s.strip()]
     clean_keywords = [k.strip() for k in settings.keywords if k.strip()]
     
     # Deduplicate preserving order
+    seen_l = set()
+    dedup_languages = [l for l in clean_languages if not (l.lower() in seen_l or seen_l.add(l.lower()))]
+
     seen_s = set()
     dedup_sources = [s for s in clean_sources if not (s.lower() in seen_s or seen_s.add(s.lower()))]
     
     seen_k = set()
     dedup_keywords = [k for k in clean_keywords if not (k.lower() in seen_k or seen_k.add(k.lower()))]
 
-    updated = AgentSettings(sources=dedup_sources, keywords=dedup_keywords)
+    updated = AgentSettings(languages=dedup_languages, sources=dedup_sources, keywords=dedup_keywords)
     success = save_settings(updated)
     if not success:
         raise HTTPException(status_code=500, detail="Failed to save settings.")

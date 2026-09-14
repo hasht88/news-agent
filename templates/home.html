@@ -320,7 +320,10 @@
           <div class="flex-1 px-4 text-right text-[15px] font-medium text-slate-800 leading-relaxed [direction:rtl] overflow-wrap-anywhere">
             {{ item.headline }}
             {% if item.url %}
-            {% set base_url = item.source_url if item.source_url else ((item.url.split('://')[0] + '://' + item.url.split('://')[1].split('/')[0]) if (item.url and '://' in item.url) else item.url) %}
+            {% set raw_host = (item.url.split('://')[1].split('/')[0]) if ('://' in item.url) else (item.url.split('/')[0]) %}
+            {% set clean_host = raw_host[4:] if raw_host.startswith('www.') else raw_host %}
+            {% set domain_name = clean_host.split('.')[0] %}
+            {% set base_url = item.source_url if item.source_url else (((item.url.split('://')[0] + '://') if '://' in item.url else 'https://') + raw_host) %}
             <span class="inline-flex items-center gap-1.5 align-middle [direction:ltr] mx-1.5">
               <a
                 href="{{ base_url }}"
@@ -330,7 +333,7 @@
                 class="inline-flex items-center text-xs font-normal text-slate-500 hover:text-slate-800 hover:underline px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200/80 border border-slate-200 transition-colors select-none font-mono-code"
                 title="Source: {{ base_url }}"
               >
-                {{ base_url }}
+                {{ domain_name }}
               </a>
               <a
                 href="{{ item.url }}"

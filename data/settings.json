@@ -1,4 +1,8 @@
 {
+  "languages": [
+    "Urdu",
+    "English"
+  ],
   "sources": [
     "https://www.aljazeera.net",
     "https://asharq.com",
