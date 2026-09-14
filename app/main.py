@@ -86,7 +86,6 @@ def merge_by_url(data):
         merged_headline = ". ".join(final) if len(final) > 1 else final[0]
 
         merged.append({'headline': merged_headline, 'url': url})
-    print("Merging by urls")
     return merged
 def crawl(sources, header):
     href_list = []
