@@ -10,6 +10,8 @@ from urllib.parse import urljoin
 from app.models import AgentSettings
 from app.storage import load_settings, save_settings, is_blob_configured
 from curl_cffi import requests
+from collections import defaultdict
+
 client = BlobClient()
 if os.environ.get("VERCEL"):
     DATA_DIR = Path("data")
@@ -46,6 +48,46 @@ dawn_headers = {
 "Upgrade-Insecure-Requests": "1",
 }
 
+def merge_by_url(data):
+    groups = defaultdict(list)
+    for item in data:
+        groups[item['url']].append(item['headline'])
+
+    merged = []
+    for url, headlines in groups.items():
+        seen = []
+        for h in headlines:
+            if h not in seen:
+                seen.append(h)
+
+        kept = []
+        for h in seen:
+            contained = [other for other in seen if other != h and other in h]
+            if contained:
+                result = h
+                for sub in contained:
+                    idx = result.find(sub)
+                    if idx > 0:
+                        before = result[:idx]
+                        after = result[idx:]
+                        if not before.rstrip().endswith(('.', '!', '?', ':')):
+                            before = before.rstrip() + '. '
+                            result = before + after
+                kept.append(result)
+            else:
+                if not any(h != other and h in other for other in seen):
+                    kept.append(h)
+
+        final = []
+        for k in kept:
+            if k not in final:
+                final.append(k)
+
+        merged_headline = ". ".join(final) if len(final) > 1 else final[0]
+
+        merged.append({'headline': merged_headline, 'url': url})
+    print("Merging by urls")
+    return merged
 def crawl(sources, header):
     href_list = []
     crawl_stats = {
@@ -110,6 +152,7 @@ def crawl(sources, header):
 
     print("Removing duplicates")
     href_list = [dict(t) for t in {tuple(d.items()) for d in href_list}]
+    href_list = merge_by_url(href_list)
     ensure_data_dir()
     if os.environ.get("VERCEL"):
         if not is_blob_configured():
