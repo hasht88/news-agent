@@ -46,8 +46,50 @@
     <!-- CARD HEADER -->
     <header class="mb-8">
       <h1 class="text-[26px] font-bold text-slate-900 tracking-tight leading-tight">Target Configuration</h1>
-      <p class="text-sm text-slate-500 mt-1 font-normal">Specify URL and Keywords</p>
+      <p class="text-sm text-slate-500 mt-1 font-normal">Specify Target Languages, URLs, and Keywords</p>
     </header>
+
+    <!-- TARGET LANGUAGES SECTION -->
+    <section class="mb-9">
+      <label for="languageInput" class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-3">TARGET LANGUAGES</label>
+      
+      <!-- Add Language Input Bar -->
+      <div class="flex items-center justify-between border border-slate-200 rounded-xl px-4 py-2.5 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/15 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+        <input 
+          type="text" 
+          id="languageInput" 
+          placeholder="Enter target language (e.g. Urdu, English, Arabic)..." 
+          class="w-full bg-transparent text-sm text-slate-800 placeholder-slate-400 focus:outline-none pr-3"
+          onkeydown="if(event.key === 'Enter') handleAddLanguage()"
+        />
+        <button 
+          type="button" 
+          onclick="handleAddLanguage()" 
+          class="text-sm font-semibold text-blue-600 hover:text-blue-700 whitespace-nowrap transition-colors select-none"
+        >
+          + Add
+        </button>
+      </div>
+
+      <!-- Language Badges Container -->
+      <div id="languagesContainer" class="mt-4 flex flex-wrap gap-2.5 items-center">
+        {% for lang in settings.languages %}
+        <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-200 bg-white text-[13px] font-medium text-slate-700 shadow-xs group transition-all" data-language="{{ lang }}">
+          <span>{{ lang }}</span>
+          <button 
+            type="button" 
+            onclick="removeLanguage(this)" 
+            class="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded focus:outline-none"
+            aria-label="Remove language"
+          >
+            <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
 
     <!-- URLS SECTION -->
     <section class="mb-9">
@@ -159,6 +201,7 @@
 
   <!-- Client Script for Interactivity and Sync -->
   <script>
+    let languages = [];
     let sources = [];
     let keywords = [];
 
@@ -167,6 +210,10 @@
     });
 
     function syncStateFromDOM() {
+      languages = Array.from(document.querySelectorAll("#languagesContainer > div"))
+        .map(el => el.getAttribute("data-language") || el.querySelector("span")?.innerText?.trim())
+        .filter(Boolean);
+
       sources = Array.from(document.querySelectorAll("#urlListContainer > div"))
         .map(el => el.getAttribute("data-url") || el.querySelector("span")?.innerText?.trim())
         .filter(Boolean);
@@ -182,6 +229,47 @@
           <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
         </svg>
       `;
+    }
+
+    function handleAddLanguage() {
+      const input = document.getElementById("languageInput");
+      let val = input.value.trim();
+      if (!val) return;
+
+      const items = val.split(",").map(l => l.trim()).filter(Boolean);
+      items.forEach(item => {
+        if (!languages.some(l => l.toLowerCase() === item.toLowerCase())) {
+          languages.push(item);
+        }
+      });
+
+      renderLanguages();
+      input.value = "";
+      input.focus();
+    }
+
+    function removeLanguage(btn) {
+      const item = btn.closest("[data-language]");
+      const lang = item.getAttribute("data-language");
+      languages = languages.filter(l => l !== lang);
+      renderLanguages();
+    }
+
+    function renderLanguages() {
+      const container = document.getElementById("languagesContainer");
+      container.innerHTML = languages.map(lang => `
+        <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-200 bg-white text-[13px] font-medium text-slate-700 shadow-xs group transition-all" data-language="${escapeHtml(lang)}">
+          <span>${escapeHtml(lang)}</span>
+          <button 
+            type="button" 
+            onclick="removeLanguage(this)" 
+            class="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded focus:outline-none"
+            aria-label="Remove language"
+          >
+            ${createRemoveIconSvg('w-3.5 h-3.5')}
+          </button>
+        </div>
+      `).join("");
     }
 
     function handleAddUrl() {
@@ -282,13 +370,15 @@
         const response = await fetch("/api/settings", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sources, keywords })
+          body: JSON.stringify({ languages, sources, keywords })
         });
 
         if (response.ok) {
           const data = await response.json();
-          sources = data.settings.sources;
-          keywords = data.settings.keywords;
+          languages = data.settings.languages || [];
+          sources = data.settings.sources || [];
+          keywords = data.settings.keywords || [];
+          renderLanguages();
           renderUrls();
           renderKeywords();
           showStatus("Changes saved successfully!");
