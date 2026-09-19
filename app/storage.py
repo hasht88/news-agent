@@ -16,7 +16,8 @@ else:
 DATA_FILE = DATA_DIR / "settings.json"
 
 client = BlobClient()
-DEFAULT_LANGUAGES: List[str] = ["Urdu", "English"]
+DEFAULT_SOURCE_LANGUAGES: List[str] = ["English", "Urdu", "Arabic"]
+DEFAULT_TARGET_LANGUAGES: List[str] = ["Urdu", "English"]
 
 DEFAULT_URLS: List[str] = []
 
@@ -35,7 +36,8 @@ def ensure_data_dir():
 
 def get_default_settings() -> AgentSettings:
     return AgentSettings(
-        languages=list(DEFAULT_LANGUAGES),
+        source_languages=list(DEFAULT_SOURCE_LANGUAGES),
+        target_languages=list(DEFAULT_TARGET_LANGUAGES),
         sources=list(DEFAULT_URLS),
         keywords=list(DEFAULT_KEYWORDS)
     )
@@ -51,7 +53,8 @@ def load_settings() -> AgentSettings:
             data = client.get("data/settings.json", access='private')
             data = json.loads(data.content)
             return AgentSettings(
-                languages=data.get("languages", list(DEFAULT_LANGUAGES)),
+                source_languages=data.get("source_languages", list(DEFAULT_SOURCE_LANGUAGES)),
+                target_languages=data.get("target_languages", data.get("languages", list(DEFAULT_TARGET_LANGUAGES))),
                 sources=data.get("sources", []),
                 keywords=data.get("keywords", [])
             )
@@ -69,7 +72,8 @@ def load_settings() -> AgentSettings:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 return AgentSettings(
-                    languages=data.get("languages", list(DEFAULT_LANGUAGES)),
+                    source_languages=data.get("source_languages", list(DEFAULT_SOURCE_LANGUAGES)),
+                    target_languages=data.get("target_languages", data.get("languages", list(DEFAULT_TARGET_LANGUAGES))),
                     sources=data.get("sources", []),
                     keywords=data.get("keywords", [])
                 )

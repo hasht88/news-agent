@@ -45,42 +45,108 @@
     
     <!-- CARD HEADER -->
     <header class="mb-8">
-      <h1 class="text-[26px] font-bold text-slate-900 tracking-tight leading-tight">Target Configuration</h1>
-      <p class="text-sm text-slate-500 mt-1 font-normal">Specify Target Languages, URLs, and Keywords</p>
+      <div class="flex items-center justify-between gap-4 mb-2">
+        <a 
+          href="/" 
+          class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 transition"
+        >
+          <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+          </svg>
+          <span>Back to Headlines</span>
+        </a>
+        <a 
+          href="/story" 
+          class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 transition"
+        >
+          <span>Go to Story</span>
+          <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </a>
+      </div>
+      <h1 class="text-[26px] font-bold text-slate-900 tracking-tight leading-tight">Configuration</h1>
+      <p class="text-sm text-slate-500 mt-1 font-normal">Specify Source & Target Languages, URLs, and Keywords</p>
     </header>
 
-    <!-- TARGET LANGUAGES SECTION -->
+    <!-- SOURCE LANGUAGES SECTION -->
     <section class="mb-9">
-      <label for="languageInput" class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-3">TARGET LANGUAGES</label>
+      <label for="sourceLanguageSelect" class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-3">SOURCE LANGUAGES</label>
       
-      <!-- Add Language Input Bar -->
+      <!-- Select Source Language Dropdown Bar -->
       <div class="flex items-center justify-between border border-slate-200 rounded-xl px-4 py-2.5 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/15 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-        <input 
-          type="text" 
-          id="languageInput" 
-          placeholder="Enter target language (e.g. Urdu, English, Arabic)..." 
-          class="w-full bg-transparent text-sm text-slate-800 placeholder-slate-400 focus:outline-none pr-3"
-          onkeydown="if(event.key === 'Enter') handleAddLanguage()"
-        />
+        <select 
+          id="sourceLanguageSelect" 
+          class="w-full bg-transparent text-sm text-slate-800 focus:outline-none pr-3 cursor-pointer"
+        >
+          <option value="" disabled selected>Select source language...</option>
+          <option value="Urdu">Urdu</option>
+          <option value="English">English</option>
+          <option value="Arabic">Arabic</option>
+        </select>
         <button 
           type="button" 
-          onclick="handleAddLanguage()" 
+          onclick="handleAddSourceLanguage()" 
           class="text-sm font-semibold text-blue-600 hover:text-blue-700 whitespace-nowrap transition-colors select-none"
         >
           + Add
         </button>
       </div>
 
-      <!-- Language Badges Container -->
-      <div id="languagesContainer" class="mt-4 flex flex-wrap gap-2.5 items-center">
-        {% for lang in settings.languages %}
-        <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-200 bg-white text-[13px] font-medium text-slate-700 shadow-xs group transition-all" data-language="{{ lang }}">
+      <!-- Source Language Badges Container -->
+      <div id="sourceLanguagesContainer" class="mt-4 flex flex-wrap gap-2.5 items-center">
+        {% for lang in settings.source_languages %}
+        <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-200 bg-white text-[13px] font-medium text-slate-700 shadow-xs group transition-all" data-source-language="{{ lang }}">
           <span>{{ lang }}</span>
           <button 
             type="button" 
-            onclick="removeLanguage(this)" 
+            onclick="removeSourceLanguage(this)" 
             class="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded focus:outline-none"
-            aria-label="Remove language"
+            aria-label="Remove source language"
+          >
+            <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- TARGET LANGUAGES SECTION -->
+    <section class="mb-9">
+      <label for="targetLanguageSelect" class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-3">TARGET LANGUAGES</label>
+      
+      <!-- Select Target Language Dropdown Bar -->
+      <div class="flex items-center justify-between border border-slate-200 rounded-xl px-4 py-2.5 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/15 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+        <select 
+          id="targetLanguageSelect" 
+          class="w-full bg-transparent text-sm text-slate-800 focus:outline-none pr-3 cursor-pointer"
+        >
+          <option value="" disabled selected>Select target language...</option>
+          <option value="Urdu">Urdu</option>
+          <option value="English">English</option>
+          <option value="Arabic">Arabic</option>
+        </select>
+        <button 
+          type="button" 
+          onclick="handleAddTargetLanguage()" 
+          class="text-sm font-semibold text-blue-600 hover:text-blue-700 whitespace-nowrap transition-colors select-none"
+        >
+          + Add
+        </button>
+      </div>
+
+      <!-- Target Language Badges Container -->
+      <div id="targetLanguagesContainer" class="mt-4 flex flex-wrap gap-2.5 items-center">
+        {% for lang in settings.target_languages %}
+        <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-200 bg-white text-[13px] font-medium text-slate-700 shadow-xs group transition-all" data-target-language="{{ lang }}">
+          <span>{{ lang }}</span>
+          <button 
+            type="button" 
+            onclick="removeTargetLanguage(this)" 
+            class="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded focus:outline-none"
+            aria-label="Remove target language"
           >
             <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
@@ -201,17 +267,23 @@
 
   <!-- Client Script for Interactivity and Sync -->
   <script>
-    let languages = [];
+    let sourceLanguages = [];
+    let targetLanguages = [];
     let sources = [];
     let keywords = [];
 
     document.addEventListener("DOMContentLoaded", () => {
       syncStateFromDOM();
+      updateDropdownOptions();
     });
 
     function syncStateFromDOM() {
-      languages = Array.from(document.querySelectorAll("#languagesContainer > div"))
-        .map(el => el.getAttribute("data-language") || el.querySelector("span")?.innerText?.trim())
+      sourceLanguages = Array.from(document.querySelectorAll("#sourceLanguagesContainer > div"))
+        .map(el => el.getAttribute("data-source-language") || el.querySelector("span")?.innerText?.trim())
+        .filter(Boolean);
+
+      targetLanguages = Array.from(document.querySelectorAll("#targetLanguagesContainer > div"))
+        .map(el => el.getAttribute("data-target-language") || el.querySelector("span")?.innerText?.trim())
         .filter(Boolean);
 
       sources = Array.from(document.querySelectorAll("#urlListContainer > div"))
@@ -231,40 +303,117 @@
       `;
     }
 
-    function handleAddLanguage() {
-      const input = document.getElementById("languageInput");
-      let val = input.value.trim();
+    const ALLOWED_LANGUAGES = ["Urdu", "English", "Arabic"];
+
+    function updateDropdownOptions() {
+      // Source Languages Dropdown
+      const sourceSelect = document.getElementById("sourceLanguageSelect");
+      if (sourceSelect) {
+        const availableSources = ALLOWED_LANGUAGES.filter(
+          lang => !sourceLanguages.some(sl => sl.toLowerCase() === lang.toLowerCase())
+        );
+        let html = '<option value="" disabled selected>Select source language...</option>';
+        availableSources.forEach(lang => {
+          html += `<option value="${lang}">${lang}</option>`;
+        });
+        sourceSelect.innerHTML = html;
+        sourceSelect.disabled = availableSources.length === 0;
+      }
+
+      // Target Languages Dropdown
+      const targetSelect = document.getElementById("targetLanguageSelect");
+      if (targetSelect) {
+        const availableTargets = ALLOWED_LANGUAGES.filter(
+          lang => !targetLanguages.some(tl => tl.toLowerCase() === lang.toLowerCase())
+        );
+        let html = '<option value="" disabled selected>Select target language...</option>';
+        availableTargets.forEach(lang => {
+          html += `<option value="${lang}">${lang}</option>`;
+        });
+        targetSelect.innerHTML = html;
+        targetSelect.disabled = availableTargets.length === 0;
+      }
+    }
+
+    function handleAddSourceLanguage() {
+      const select = document.getElementById("sourceLanguageSelect");
+      let val = select.value.trim();
       if (!val) return;
 
-      const items = val.split(",").map(l => l.trim()).filter(Boolean);
-      items.forEach(item => {
-        if (!languages.some(l => l.toLowerCase() === item.toLowerCase())) {
-          languages.push(item);
-        }
-      });
+      if (!ALLOWED_LANGUAGES.some(l => l.toLowerCase() === val.toLowerCase())) {
+        showStatus("Invalid language selected", true);
+        return;
+      }
 
-      renderLanguages();
-      input.value = "";
-      input.focus();
+      if (!sourceLanguages.some(l => l.toLowerCase() === val.toLowerCase())) {
+        sourceLanguages.push(val);
+      }
+
+      renderSourceLanguages();
+      updateDropdownOptions();
     }
 
-    function removeLanguage(btn) {
-      const item = btn.closest("[data-language]");
-      const lang = item.getAttribute("data-language");
-      languages = languages.filter(l => l !== lang);
-      renderLanguages();
+    function removeSourceLanguage(btn) {
+      const item = btn.closest("[data-source-language]");
+      const lang = item.getAttribute("data-source-language");
+      sourceLanguages = sourceLanguages.filter(l => l !== lang);
+      renderSourceLanguages();
+      updateDropdownOptions();
     }
 
-    function renderLanguages() {
-      const container = document.getElementById("languagesContainer");
-      container.innerHTML = languages.map(lang => `
-        <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-200 bg-white text-[13px] font-medium text-slate-700 shadow-xs group transition-all" data-language="${escapeHtml(lang)}">
+    function renderSourceLanguages() {
+      const container = document.getElementById("sourceLanguagesContainer");
+      container.innerHTML = sourceLanguages.map(lang => `
+        <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-200 bg-white text-[13px] font-medium text-slate-700 shadow-xs group transition-all" data-source-language="${escapeHtml(lang)}">
           <span>${escapeHtml(lang)}</span>
           <button 
             type="button" 
-            onclick="removeLanguage(this)" 
+            onclick="removeSourceLanguage(this)" 
             class="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded focus:outline-none"
-            aria-label="Remove language"
+            aria-label="Remove source language"
+          >
+            ${createRemoveIconSvg('w-3.5 h-3.5')}
+          </button>
+        </div>
+      `).join("");
+    }
+
+    function handleAddTargetLanguage() {
+      const select = document.getElementById("targetLanguageSelect");
+      let val = select.value.trim();
+      if (!val) return;
+
+      if (!ALLOWED_LANGUAGES.some(l => l.toLowerCase() === val.toLowerCase())) {
+        showStatus("Invalid language selected", true);
+        return;
+      }
+
+      if (!targetLanguages.some(l => l.toLowerCase() === val.toLowerCase())) {
+        targetLanguages.push(val);
+      }
+
+      renderTargetLanguages();
+      updateDropdownOptions();
+    }
+
+    function removeTargetLanguage(btn) {
+      const item = btn.closest("[data-target-language]");
+      const lang = item.getAttribute("data-target-language");
+      targetLanguages = targetLanguages.filter(l => l !== lang);
+      renderTargetLanguages();
+      updateDropdownOptions();
+    }
+
+    function renderTargetLanguages() {
+      const container = document.getElementById("targetLanguagesContainer");
+      container.innerHTML = targetLanguages.map(lang => `
+        <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-200 bg-white text-[13px] font-medium text-slate-700 shadow-xs group transition-all" data-target-language="${escapeHtml(lang)}">
+          <span>${escapeHtml(lang)}</span>
+          <button 
+            type="button" 
+            onclick="removeTargetLanguage(this)" 
+            class="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded focus:outline-none"
+            aria-label="Remove target language"
           >
             ${createRemoveIconSvg('w-3.5 h-3.5')}
           </button>
@@ -370,17 +519,25 @@
         const response = await fetch("/api/settings", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ languages, sources, keywords })
+          body: JSON.stringify({ 
+            source_languages: sourceLanguages,
+            target_languages: targetLanguages, 
+            sources, 
+            keywords 
+          })
         });
 
         if (response.ok) {
           const data = await response.json();
-          languages = data.settings.languages || [];
+          sourceLanguages = data.settings.source_languages || [];
+          targetLanguages = data.settings.target_languages || data.settings.languages || [];
           sources = data.settings.sources || [];
           keywords = data.settings.keywords || [];
-          renderLanguages();
+          renderSourceLanguages();
+          renderTargetLanguages();
           renderUrls();
           renderKeywords();
+          updateDropdownOptions();
           showStatus("Changes saved successfully!");
         } else {
           showStatus("Failed to save changes", true);

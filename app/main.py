@@ -1,8 +1,8 @@
 import re, os, json
 import httpx
 from bs4 import BeautifulSoup, SoupStrainer
-from fastapi import FastAPI, Request, HTTPException, Form
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, HTTPException, Form, status
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from vercel.blob import BlobClient
@@ -11,6 +11,8 @@ from app.models import AgentSettings
 from app.storage import load_settings, save_settings, is_blob_configured
 from curl_cffi import requests
 from collections import defaultdict
+from lingua import Language, LanguageDetectorBuilder
+
 
 client = BlobClient()
 if os.environ.get("VERCEL"):
@@ -19,12 +21,45 @@ else:
     DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 DATA_FILE = DATA_DIR / "links.json"
+SELECTED_NEWS_FILE = DATA_DIR / "selected_news.json"
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 def ensure_data_dir():
     if not os.environ.get("VERCEL"):
         DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
+def detect_lang(items):
+    if not items:
+        return items
+    settings = load_settings()
+    source_languages = settings.source_languages or []
+    languages = []
+    for lang in source_languages:
+        lang_enum = getattr(Language, str(lang).upper(), None)
+        if lang_enum and lang_enum not in languages:
+            languages.append(lang_enum)
+    if not languages:
+        languages = [Language.ENGLISH, Language.URDU, Language.ARABIC]
 
+    try:
+        detector = LanguageDetectorBuilder.from_languages(*languages).build()
+    except Exception as e:
+        print(f"Error building LanguageDetector: {e}")
+        detector = None
+
+    items_lang = []
+    for item in items:
+        text = (item.get("heading") or item.get("headline") or "").strip()
+        detected_code = ""
+        if detector and text:
+            try:
+                detected = detector.detect_language_of(text)
+                if detected and hasattr(detected, "iso_code_639_1"):
+                    detected_code = detected.iso_code_639_1.name.lower()
+            except Exception as e:
+                print(f"Language detection failed for text '{text[:30]}': {e}")
+        item["source_language"] = detected_code
+        items_lang.append(item)
+    return items_lang
 app = FastAPI(
     title="News Curation Agent",
     description="Configure Scope URLs, Track Keywords and Curate News",
@@ -272,7 +307,78 @@ async def filter_news(request: Request):
         }
     )
 
-@app.post("/process", response_class=HTMLResponse)
+def save_selected_news(items: list[dict]):
+    ensure_data_dir()
+    clean_items = []
+    for it in items:
+        clean_it = {
+            "heading": it.get("headline", ""),
+            "url": it.get("url", ""),
+            "subheading": "",
+            "summary": "",
+            "image": "",
+            "content": "",
+            "author": "",
+            "date": "",
+            "sitename":"",
+            "source_language":"",
+        }
+        if "tags" in it and it.get("tags"):
+            clean_it["tags"] = it["tags"]
+        clean_items.append(clean_it)
+    clean_items = detect_lang(clean_items)
+    if os.environ.get("VERCEL"):
+        if not is_blob_configured():
+            print("Notice: Vercel Blob token not configured. Skipping upload to blob.")
+        else:
+            try:
+                client.put(
+                    "data/selected_news.json",
+                    json.dumps(clean_items, ensure_ascii=False),
+                    access="private",
+                    content_type="application/json",
+                    overwrite=True
+                )
+            except Exception as e:
+                print(f"Error saving selected news to blob: {e}")
+    else:
+        try:
+            with open(SELECTED_NEWS_FILE, "w", encoding="utf-8") as f:
+                json.dump(clean_items, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Error saving selected news to file: {e}")
+
+def load_selected_news():
+    if os.environ.get("VERCEL"):
+        if not is_blob_configured():
+            return []
+        try:
+            data = client.get("data/selected_news.json", access="private")
+            return json.loads(data.content)
+        except Exception as e:
+            print(f"Error loading selected news from blob: {e}")
+            return []
+    else:
+        try:
+            ensure_data_dir()
+            if not SELECTED_NEWS_FILE.exists():
+                return []
+            with open(SELECTED_NEWS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading selected news from file: {e}")
+            return []
+
+@app.get("/story", response_class=HTMLResponse)
+async def story_page(request: Request):
+    stories = load_selected_news()
+    return templates.TemplateResponse(
+        request=request,
+        name="story.html",
+        context={"stories": stories}
+    )
+
+@app.post("/process", response_class=RedirectResponse)
 async def process_news(
     request: Request,
     selected_news: list[int] = Form(default=[])):
@@ -283,15 +389,8 @@ async def process_news(
         if matched:
             selected_items.append(matched)
 
-    return templates.TemplateResponse(
-        request=request,
-        name="home.html",
-        context={
-            "news": news,
-            "selected_items": selected_items,
-            "status_msg": f"Processed {len(selected_items)} selected news article(s)."
-        }
-    )
+    save_selected_news(selected_items)
+    return RedirectResponse(url="/story", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.get("/api/settings", response_model=AgentSettings)
 async def get_settings():
@@ -299,13 +398,17 @@ async def get_settings():
 
 @app.post("/api/settings")
 async def save_all_settings(settings: AgentSettings):
-    clean_languages = [l.strip() for l in settings.languages if l.strip()]
+    clean_source_languages = [l.strip() for l in settings.source_languages if l.strip()]
+    clean_target_languages = [l.strip() for l in settings.target_languages if l.strip()]
     clean_sources = [s.strip() for s in settings.sources if s.strip()]
     clean_keywords = [k.strip() for k in settings.keywords if k.strip()]
     
     # Deduplicate preserving order
-    seen_l = set()
-    dedup_languages = [l for l in clean_languages if not (l.lower() in seen_l or seen_l.add(l.lower()))]
+    seen_sl = set()
+    dedup_source_languages = [l for l in clean_source_languages if not (l.lower() in seen_sl or seen_sl.add(l.lower()))]
+
+    seen_tl = set()
+    dedup_target_languages = [l for l in clean_target_languages if not (l.lower() in seen_tl or seen_tl.add(l.lower()))]
 
     seen_s = set()
     dedup_sources = [s for s in clean_sources if not (s.lower() in seen_s or seen_s.add(s.lower()))]
@@ -313,7 +416,12 @@ async def save_all_settings(settings: AgentSettings):
     seen_k = set()
     dedup_keywords = [k for k in clean_keywords if not (k.lower() in seen_k or seen_k.add(k.lower()))]
 
-    updated = AgentSettings(languages=dedup_languages, sources=dedup_sources, keywords=dedup_keywords)
+    updated = AgentSettings(
+        source_languages=dedup_source_languages,
+        target_languages=dedup_target_languages,
+        sources=dedup_sources,
+        keywords=dedup_keywords
+    )
     success = save_settings(updated)
     if not success:
         raise HTTPException(status_code=500, detail="Failed to save settings.")

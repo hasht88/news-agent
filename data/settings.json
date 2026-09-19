@@ -1,5 +1,10 @@
 {
-  "languages": [
+  "source_languages": [
+    "Urdu",
+    "Arabic",
+    "English"
+  ],
+  "target_languages": [
     "Urdu",
     "English"
   ],

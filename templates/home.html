@@ -56,8 +56,20 @@
         <span class="font-bold text-lg tracking-tight">News Curation Agent</span>
       </a>
 
-      <!-- Navigation Tabs (Only Setting Tab) -->
-      <div class="flex items-center">
+      <!-- Navigation Tabs -->
+      <div class="flex items-center gap-2.5">
+        <a 
+          href="/story" 
+          class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200/80 transition-all shadow-2xs"
+          title="Story Workspace"
+        >
+          <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+          </svg>
+          <span>Story</span>
+        </a>
+
         <a 
           href="/setting" 
           class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200/80 transition-all shadow-2xs"
@@ -128,13 +140,18 @@
           <span id="selectAllText">Select All</span>
         </button>
 
-        <!-- Process Selected News Button (Client-side dynamic processing) -->
+        <!-- Process Selected News Button -->
         <button
           type="button"
+          id="proceedBtn"
           onclick="processSelectedNews()"
-          class="bg-[#0F172A] hover:bg-[#1E293B] active:scale-[0.98] text-white font-medium text-xs sm:text-sm px-4 sm:px-5 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+          class="bg-[#0F172A] hover:bg-[#1E293B] active:scale-[0.98] text-white font-medium text-xs sm:text-sm px-4 sm:px-5 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          <span>Process Selected News</span>
+          <svg id="proceedSpinner" class="hidden animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span id="proceedBtnText">Proceed</span>
         </button>
       </div>
 
@@ -677,55 +694,30 @@
     // Client-side Process Selected News (No page reload)
     function processSelectedNews() {
       const checkedBoxes = Array.from(document.querySelectorAll(".news-checkbox:checked"));
-      const section = document.getElementById("selectedNewsSection");
-      const listContainer = document.getElementById("selectedNewsList");
-      const countNum = document.getElementById("selectedCountNum");
+      const form = document.getElementById("newsForm");
 
-      if (!section || !listContainer) return;
+      if (!form) return;
 
       if (checkedBoxes.length === 0) {
         alert("Please select at least one article to process.");
         return;
       }
 
-      // Extract headline and url directly from the parent .news-item label
-      const selectedArticles = checkedBoxes.map(cb => {
-        const item = cb.closest(".news-item");
-        if (!item) return null;
-        const rawHeadline = item.getAttribute("data-raw-headline") || item.querySelector(".flex-1")?.innerText?.trim() || "";
-        const rawUrl = item.getAttribute("data-raw-url") || item.querySelector("a[href]")?.getAttribute("href") || "";
-        return { headline: rawHeadline, url: rawUrl };
-      }).filter(Boolean);
+      const proceedBtn = document.getElementById("proceedBtn");
+      const proceedSpinner = document.getElementById("proceedSpinner");
+      const proceedBtnText = document.getElementById("proceedBtnText");
 
-      // Render Selected News HTML
-      listContainer.innerHTML = selectedArticles.map(item => `
-        <div class="py-4 first:pt-0 last:pb-0">
-          <div class="text-[15px] font-semibold text-slate-900 leading-relaxed [direction:rtl] text-right">
-            ${escapeHtml(item.headline)}
-          </div>
-          <div class="mt-2 flex items-center gap-1.5 text-xs text-slate-500 font-mono-code">
-            <span class="text-slate-400">URL:</span>
-            <a
-              href="${escapeHtml(item.url)}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-blue-600 hover:text-blue-700 hover:underline break-all"
-            >
-              ${escapeHtml(item.url)}
-            </a>
-          </div>
-        </div>
-      `).join("");
-
-      if (countNum) {
-        countNum.innerText = selectedArticles.length;
+      if (proceedBtn) {
+        proceedBtn.disabled = true;
+      }
+      if (proceedSpinner) {
+        proceedSpinner.classList.remove("hidden");
+      }
+      if (proceedBtnText) {
+        proceedBtnText.innerText = "Processing...";
       }
 
-      // Reveal section
-      section.classList.remove("hidden");
-
-      // Smoothly scroll to the selected news section
-      section.scrollIntoView({ behavior: "smooth", block: "start" });
+      form.submit();
     }
 
     // Helper for HTML escaping

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100/70">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Selected Stories - News Curation Agent</title>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', 'monospace']
+          },
+          colors: {
+            brandDark: '#0F172A',
+            brandBlue: '#2563EB'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-full bg-[#F5F6F8] text-slate-800 antialiased">
+
+  <!-- TOP NAVIGATION BAR (STICKY AT TOP) -->
+  <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+    <div class="max-w-5xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
+      <!-- Brand / Logo -->
+      <a href="/" class="flex items-center gap-2.5 text-slate-900 hover:text-slate-700 transition-colors">
+        <div class="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xs">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/>
+            <path d="M18 14h-8"/>
+            <path d="M15 18h-5"/>
+            <path d="M10 6h8v4h-8V6Z"/>
+          </svg>
+        </div>
+        <span class="font-bold text-lg tracking-tight">News Curation Agent</span>
+      </a>
+
+      <!-- Navigation Tabs -->
+      <div class="flex items-center gap-2.5">
+        <a 
+          href="/" 
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200/80 transition-all shadow-2xs"
+          title="Headlines"
+        >
+          <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span>Headlines</span>
+        </a>
+
+        <a 
+          href="/story" 
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold bg-slate-900 text-white shadow-xs"
+          title="Story Workspace"
+        >
+          <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+          </svg>
+          <span>Story</span>
+        </a>
+
+        <a 
+          href="/setting" 
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200/80 transition-all shadow-2xs"
+          title="Configuration Settings"
+        >
+          <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span>Setting</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
+
+    <!-- CARD CONTAINER -->
+    <div class="bg-white rounded-[28px] border border-slate-200/90 shadow-[0_4px_30px_rgba(0,0,0,0.03)] p-6 sm:p-10 transition-all">
+
+      {% if stories and stories|length > 0 %}
+      <!-- STORY SELECT DROPDOWN SECTION -->
+      <section class="mb-8">
+        <label for="storySelect" class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2.5">STORY</label>
+        <div class="relative">
+          <select 
+            id="storySelect" 
+            onchange="handleStoryChange(this.value)"
+            class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3.5 pr-10 text-sm font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 shadow-[0_1px_2px_rgba(0,0,0,0.02)] cursor-pointer transition appearance-none"
+          >
+            {% for s in stories %}
+            {% set story_title = s.heading or s.headline or 'Untitled Story' %}
+            <option value="{{ loop.index0 }}" {% if loop.first %}selected{% endif %}>
+              {{ loop.index }}. {{ story_title[:90] }}{% if story_title|length > 90 %}...{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
+            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- SELECTED STORY DETAILS DISPLAY -->
+      <section id="storyDetailsCard" class="bg-slate-50/70 rounded-2xl border border-slate-200/90 p-5 sm:p-7">
+        <!-- Headline -->
+        <div class="mb-5">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Headline</span>
+          </div>
+          <h2 id="storyHeadline" class="text-[17px] sm:text-[18px] font-semibold text-slate-900 leading-relaxed text-left">
+            <!-- Headline text rendered via JS -->
+          </h2>
+        </div>
+
+        <!-- Tags if available -->
+        <div id="storyTagsWrapper" class="mb-5 hidden">
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Matched Keywords / Tags</div>
+          <div id="storyTagsContainer" class="flex flex-wrap items-center gap-1.5"></div>
+        </div>
+
+        <!-- Source / URL -->
+        <div class="pt-4 border-t border-slate-200/60 flex flex-col sm:flex-row sm:items-center justify-end gap-3">
+          <a
+            id="storyOpenBtn" 
+            href="#" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-lg border border-slate-200 shadow-2xs transition shrink-0"
+          >
+            <span>Open Article</span>
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </a>
+        </div>
+      </section>
+      {% else %}
+      <!-- EMPTY STATE -->
+      <div class="py-12 text-center">
+        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center mb-4">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+          </svg>
+        </div>
+        <h3 class="text-base font-semibold text-slate-800">No stories selected yet</h3>
+        <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Go back to the headlines page, select articles, and click "Proceed" to curate stories here.</p>
+        <a 
+          href="/" 
+          class="inline-flex items-center gap-2 mt-5 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl transition shadow-xs"
+        >
+          <span>Browse Headlines</span>
+          <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </a>
+      </div>
+      {% endif %}
+
+    </div>
+
+  </main>
+
+  <script>
+    // Stories data injected from backend
+    const stories = {{ stories|tojson if stories else '[]' }};
+
+    function handleStoryChange(indexStr) {
+      const idx = parseInt(indexStr, 10);
+      if (isNaN(idx) || idx < 0 || idx >= stories.length) return;
+      const story = stories[idx];
+      renderStoryDetails(story);
+    }
+
+    function renderStoryDetails(story) {
+      if (!story) return;
+
+      const headlineText = story.heading || story.headline || "";
+      const headlineEl = document.getElementById("storyHeadline");
+      const openBtnEl = document.getElementById("storyOpenBtn");
+      const tagsWrapper = document.getElementById("storyTagsWrapper");
+      const tagsContainer = document.getElementById("storyTagsContainer");
+
+      if (headlineEl) {
+        headlineEl.innerText = headlineText;
+        // Adjust text direction for Arabic/Urdu scripts
+        const isRtl = /[\u0600-\u06FF]/.test(headlineText);
+        if (isRtl) {
+          headlineEl.style.direction = "rtl";
+          headlineEl.style.textAlign = "right";
+        } else {
+          headlineEl.style.direction = "ltr";
+          headlineEl.style.textAlign = "left";
+        }
+      }
+
+      if (openBtnEl) openBtnEl.href = story.url || "#";
+
+      if (tagsContainer && tagsWrapper) {
+        let tags = [];
+        if (story.tags) {
+          if (Array.isArray(story.tags)) tags = story.tags;
+          else if (typeof story.tags === "string") tags = [story.tags];
+        }
+
+        if (tags.length > 0) {
+          tagsContainer.innerHTML = tags.map(t => `
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full border border-slate-200 bg-white text-[11px] font-medium text-slate-700 shadow-2xs">
+              ${escapeHtml(t)}
+            </span>
+          `).join("");
+          tagsWrapper.classList.remove("hidden");
+        } else {
+          tagsContainer.innerHTML = "";
+          tagsWrapper.classList.add("hidden");
+        }
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (stories && stories.length > 0) {
+        renderStoryDetails(stories[0]);
+      }
+    });
+  </script>
+</body>
+</html>
