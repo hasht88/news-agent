@@ -125,41 +125,247 @@
         </div>
       </section>
 
-      <!-- SELECTED STORY DETAILS DISPLAY -->
-      <section id="storyDetailsCard" class="bg-slate-50/70 rounded-2xl border border-slate-200/90 p-5 sm:p-7">
-        <!-- Headline -->
-        <div class="mb-5">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Headline</span>
+      <!-- SELECTED STORY EDITORIAL WORKFLOW SECTION -->
+      <section id="storyDetailsCard" class="bg-slate-50/70 rounded-2xl border border-slate-200/90 p-5 sm:p-7 transition-all">
+        
+        <!-- Header bar inside editor -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-4 mb-5 border-b border-slate-200/80">
+          <div class="flex items-center gap-2.5">
+            <button
+              id="fetchStoryBtn"
+              type="button"
+              onclick="fetchCurrentStory()"
+              class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 rounded-lg text-xs font-semibold shadow-2xs transition group cursor-pointer"
+              title="Scrape and fetch story details from source URL"
+            >
+              <svg id="fetchSpinner" class="w-3.5 h-3.5 animate-spin hidden text-indigo-600" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <svg id="fetchIcon" class="w-3.5 h-3.5 text-indigo-600 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+              <span id="fetchBtnText">Fetch</span>
+            </button>
           </div>
-          <h2 id="storyHeadline" class="text-[17px] sm:text-[18px] font-semibold text-slate-900 leading-relaxed text-left">
-            <!-- Headline text rendered via JS -->
-          </h2>
+
+          <!-- Action Buttons: Open source article & Save -->
+          <div class="flex items-center gap-2">
+            <a
+              id="storyOpenBtn" 
+              href="#" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-lg border border-slate-200 shadow-2xs transition"
+              title="Open source URL in new tab"
+            >
+              <span>Source URL</span>
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+            </a>
+
+            <button
+              id="saveStoryBtn"
+              type="button"
+              onclick="saveCurrentStory()"
+              class="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-xs transition"
+            >
+              <svg id="saveSpinner" class="w-3.5 h-3.5 animate-spin hidden text-white" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <svg id="saveIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <span id="saveBtnText">Save Story</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Tags if available -->
+        <!-- Tags / Keywords if available -->
         <div id="storyTagsWrapper" class="mb-5 hidden">
-          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Matched Keywords / Tags</div>
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Matched Keywords</div>
           <div id="storyTagsContainer" class="flex flex-wrap items-center gap-1.5"></div>
         </div>
 
-        <!-- Source / URL -->
-        <div class="pt-4 border-t border-slate-200/60 flex flex-col sm:flex-row sm:items-center justify-end gap-3">
-          <a
-            id="storyOpenBtn" 
-            href="#" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-lg border border-slate-200 shadow-2xs transition shrink-0"
-          >
-            <span>Open Article</span>
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-              <polyline points="15 3 21 3 21 9"/>
-              <line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-          </a>
+        <!-- Meta Details: Author, Date / Location, Image URL -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+          <div>
+            <label for="storyAuthor" class="block text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-1">Author</label>
+            <input 
+              type="text" 
+              id="storyAuthor" 
+              oninput="handleFieldInput()"
+              class="w-full text-xs rounded-lg border border-slate-200 bg-white p-2.5 text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition" 
+              placeholder="e.g. Staff Reporter"
+            >
+          </div>
+          <div>
+            <label for="storyDate" class="block text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-1">Publish Date</label>
+            <input 
+              type="text" 
+              id="storyDate" 
+              oninput="handleFieldInput()"
+              class="w-full text-xs rounded-lg border border-slate-200 bg-white p-2.5 text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition" 
+              placeholder="e.g. Islamabad — Today"
+            >
+          </div>
         </div>
+
+        <!-- Headline / Heading -->
+        <div class="mb-5">
+          <div class="flex justify-between items-center mb-1.5">
+            <label for="storyHeadlineInput" class="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <span class="w-1.5 h-3 bg-blue-600 rounded-xs"></span>
+              Heading
+            </label>
+            <span id="headlineCharCount" class="text-[10px] font-mono text-slate-400">0 chars</span>
+          </div>
+          <textarea 
+            id="storyHeadlineInput" 
+            rows="2" 
+            oninput="handleFieldInput(); updateCharCounts(); autoExpandTextarea(this);"
+            class="w-full text-base font-semibold text-slate-900 rounded-xl border border-slate-200 bg-white p-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition leading-snug overflow-hidden resize-y"
+            placeholder="Enter a punchy, accurate news headline..."
+          ></textarea>
+        </div>
+
+        <!-- Subheading / Deck -->
+        <div class="mb-5">
+          <div class="flex justify-between items-center mb-1.5">
+            <label for="storySubheading" class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Subheading</label>
+            <span id="subheadingCharCount" class="text-[10px] font-mono text-slate-400">0 chars</span>
+          </div>
+          <textarea 
+            id="storySubheading" 
+            rows="2" 
+            oninput="handleFieldInput(); updateCharCounts(); autoExpandTextarea(this);"
+            class="w-full text-xs sm:text-sm text-slate-700 rounded-xl border border-slate-200 bg-white p-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition leading-relaxed overflow-hidden resize-y"
+            placeholder="Elaborate on the headline with context or key impact..."
+          ></textarea>
+        </div>
+
+        <!-- Executive Summary / Key Takeaways Box -->
+        <div id="storySummaryWrapper" class="mb-5 hidden">
+          <div class="flex justify-between items-center mb-1.5">
+            <label for="storySummary" class="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm.75 11.25a.75.75 0 01-1.5 0v-5a.75.75 0 011.5 0v5zm-.75-7.5a.75.75 0 110-1.5.75.75 0 010 1.5z"></path>
+              </svg>
+              Summary
+            </label>
+            <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-medium">Front-page callout</span>
+          </div>
+          <textarea 
+            id="storySummary" 
+            rows="3" 
+            oninput="handleFieldInput(); autoExpandTextarea(this);"
+            class="w-full text-xs sm:text-sm bg-amber-50/40 text-slate-800 rounded-xl border border-amber-200/80 p-3 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 focus:bg-white outline-none transition leading-relaxed overflow-hidden resize-y"
+            placeholder="Summarize the core scoop in 2-3 essential sentences..."
+          ></textarea>
+        </div>
+
+        <!-- Main Story Content / Article Body -->
+        <div class="mb-6">
+          <div class="flex justify-between items-center mb-1.5">
+            <label for="storyContent" class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Body</label>
+            <span id="contentWordCount" class="text-[10px] font-mono text-slate-400">0 words</span>
+          </div>
+          <textarea 
+            id="storyContent" 
+            rows="6" 
+            oninput="handleFieldInput(); updateCharCounts(); autoExpandTextarea(this);"
+            class="w-full text-xs sm:text-sm text-slate-800 rounded-xl border border-slate-200 bg-white p-3.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition leading-relaxed font-sans overflow-hidden resize-y min-h-[160px]"
+            placeholder="Write or edit the full story body, journalistic analysis, or narrative here..."
+          ></textarea>
+        </div>
+
+        <!-- MODULAR STORY COMPONENTS SECTION (Screenshot & Workflow Inspired) -->
+        <div class="pt-6 border-t border-slate-200/80 mb-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <span class="flex h-2 w-2 rounded-full bg-emerald-600"></span>
+              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Story Components (Modular Blocks)</h3>
+            </div>
+            <span id="blocksCountBadge" class="text-[11px] text-slate-400 font-mono">0 components</span>
+          </div>
+
+          <!-- Dynamic Blocks Container -->
+          <div id="storyBlocksContainer" class="space-y-4 mb-6">
+            <!-- Injected via renderStoryBlocks() -->
+          </div>
+
+          <!-- Component Action Tool Palette -->
+          <div class="pt-5 border-t border-slate-200">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center">
+              <svg class="w-3.5 h-3.5 mr-1.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              </svg>
+              Insert Story Component:
+            </p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <button 
+                type="button" 
+                onclick="addStoryBlock('paragraph')" 
+                class="flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50/40 text-xs font-medium text-slate-700 shadow-2xs transition group cursor-pointer"
+              >
+                <svg class="w-4 h-4 mr-1.5 text-slate-400 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
+                </svg>
+                + Paragraph
+              </button>
+
+              <button 
+                type="button" 
+                onclick="addStoryBlock('heading')" 
+                class="flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50/40 text-xs font-medium text-slate-700 shadow-2xs transition group cursor-pointer"
+              >
+                <svg class="w-4 h-4 mr-1.5 text-slate-400 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                </svg>
+                + Sub-heading
+              </button>
+
+              <button 
+                type="button" 
+                onclick="addStoryBlock('image')" 
+                class="flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50/40 text-xs font-medium text-slate-700 shadow-2xs transition group cursor-pointer"
+              >
+                <svg class="w-4 h-4 mr-1.5 text-slate-400 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                + Image Media
+              </button>
+
+              <button 
+                type="button" 
+                onclick="addStoryBlock('quote')" 
+                class="flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50/40 text-xs font-medium text-slate-700 shadow-2xs transition group cursor-pointer"
+              >
+                <svg class="w-4 h-4 mr-1.5 text-slate-400 group-hover:text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+                </svg>
+                + Pullquote
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status / Feedback Toast inside card footer -->
+        <div class="flex items-center justify-between pt-3 border-t border-slate-200/60 text-xs">
+          <div id="saveStatusMessage" class="opacity-0 transition-opacity duration-300 font-medium"></div>
+          <button
+            type="button"
+            onclick="saveCurrentStory()"
+            class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition shadow-xs cursor-pointer"
+          >
+            Update Story
+          </button>
+        </div>
+
       </section>
       {% else %}
       <!-- EMPTY STATE -->
@@ -191,37 +397,67 @@
   <script>
     // Stories data injected from backend
     const stories = {{ stories|tojson if stories else '[]' }};
+    let currentStoryIndex = 0;
 
     function handleStoryChange(indexStr) {
       const idx = parseInt(indexStr, 10);
       if (isNaN(idx) || idx < 0 || idx >= stories.length) return;
-      const story = stories[idx];
-      renderStoryDetails(story);
+      currentStoryIndex = idx;
+      renderStoryDetails(stories[idx]);
     }
 
     function renderStoryDetails(story) {
       if (!story) return;
 
-      const headlineText = story.heading || story.headline || "";
-      const headlineEl = document.getElementById("storyHeadline");
+      const headlineVal = story.heading || story.headline || "";
+      const headlineInput = document.getElementById("storyHeadlineInput");
+      const subheadingInput = document.getElementById("storySubheading");
+      const summaryInput = document.getElementById("storySummary");
+      const contentInput = document.getElementById("storyContent");
+      const authorInput = document.getElementById("storyAuthor");
+      const dateInput = document.getElementById("storyDate");
+      const imageInput = document.getElementById("storyImage");
+      const langBadgeEl = document.getElementById("storyLangBadge");
       const openBtnEl = document.getElementById("storyOpenBtn");
       const tagsWrapper = document.getElementById("storyTagsWrapper");
       const tagsContainer = document.getElementById("storyTagsContainer");
 
-      if (headlineEl) {
-        headlineEl.innerText = headlineText;
-        // Adjust text direction for Arabic/Urdu scripts
-        const isRtl = /[\u0600-\u06FF]/.test(headlineText);
-        if (isRtl) {
-          headlineEl.style.direction = "rtl";
-          headlineEl.style.textAlign = "right";
+      if (headlineInput) headlineInput.value = headlineVal;
+      if (subheadingInput) subheadingInput.value = story.subheading || "";
+      if (summaryInput) summaryInput.value = story.summary || "";
+      if (contentInput) contentInput.value = story.content || "";
+      if (authorInput) authorInput.value = story.author || "";
+      if (dateInput) dateInput.value = story.date || "";
+      if (imageInput) imageInput.value = story.image || "";
+
+      // Only display summary section if present, otherwise hide it
+      const summaryWrapper = document.getElementById("storySummaryWrapper");
+      const summaryText = (story.summary || "").trim();
+      if (summaryWrapper) {
+        if (summaryText) {
+          summaryWrapper.classList.remove("hidden");
         } else {
-          headlineEl.style.direction = "ltr";
-          headlineEl.style.textAlign = "left";
+          summaryWrapper.classList.add("hidden");
         }
       }
 
       if (openBtnEl) openBtnEl.href = story.url || "#";
+
+      // Detect RTL for text areas if language or characters are Arabic/Urdu
+      adjustTextDirection(headlineInput, headlineVal);
+      adjustTextDirection(subheadingInput, story.subheading || "");
+      adjustTextDirection(summaryInput, story.summary || "");
+      adjustTextDirection(contentInput, story.content || "");
+
+      if (langBadgeEl) {
+        const lang = (story.source_language || "").toUpperCase();
+        if (lang) {
+          langBadgeEl.innerText = `LANG: ${lang}`;
+          langBadgeEl.classList.remove("hidden");
+        } else {
+          langBadgeEl.classList.add("hidden");
+        }
+      }
 
       if (tagsContainer && tagsWrapper) {
         let tags = [];
@@ -242,6 +478,503 @@
           tagsWrapper.classList.add("hidden");
         }
       }
+
+      updateCharCounts();
+      renderStoryBlocks();
+
+      // Auto-expand content textarea to show full length
+      if (contentInput) {
+        autoExpandTextarea(contentInput);
+      }
+      if (headlineInput) {
+        autoExpandTextarea(headlineInput);
+      }
+      if (subheadingInput) {
+        autoExpandTextarea(subheadingInput);
+      }
+      if (summaryInput) {
+        autoExpandTextarea(summaryInput);
+      }
+    }
+
+    function autoExpandTextarea(el) {
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = (el.scrollHeight + 4) + 'px';
+    }
+
+    function adjustTextDirection(el, text) {
+      if (!el) return;
+      const isRtl = /[\u0600-\u06FF]/.test(text);
+      if (isRtl) {
+        el.style.direction = "rtl";
+        el.style.textAlign = "right";
+      } else {
+        el.style.direction = "ltr";
+        el.style.textAlign = "left";
+      }
+    }
+
+    function handleFieldInput() {
+      // Sync active edits into current stories in memory
+      if (!stories[currentStoryIndex]) return;
+      const current = stories[currentStoryIndex];
+      const hVal = document.getElementById("storyHeadlineInput")?.value || "";
+      current.heading = hVal;
+      current.subheading = document.getElementById("storySubheading")?.value || "";
+      current.summary = document.getElementById("storySummary")?.value || "";
+      current.content = document.getElementById("storyContent")?.value || "";
+      current.author = document.getElementById("storyAuthor")?.value || "";
+      current.date = document.getElementById("storyDate")?.value || "";
+      current.image = document.getElementById("storyImage")?.value || "";
+
+      // Update dropdown option label
+      const selectEl = document.getElementById("storySelect");
+      if (selectEl && selectEl.options[currentStoryIndex]) {
+        const title = hVal || "Untitled Story";
+        selectEl.options[currentStoryIndex].text = `${currentStoryIndex + 1}. ${title.slice(0, 90)}${title.length > 90 ? "..." : ""}`;
+      }
+    }
+
+    function updateCharCounts() {
+      const hVal = document.getElementById("storyHeadlineInput")?.value || "";
+      const sVal = document.getElementById("storySubheading")?.value || "";
+      const cVal = document.getElementById("storyContent")?.value || "";
+
+      const hCountEl = document.getElementById("headlineCharCount");
+      const sCountEl = document.getElementById("subheadingCharCount");
+      const cCountEl = document.getElementById("contentWordCount");
+
+      if (hCountEl) hCountEl.innerText = `${hVal.length} chars`;
+      if (sCountEl) sCountEl.innerText = `${sVal.length} chars`;
+      if (cCountEl) {
+        const words = cVal.trim() ? cVal.trim().split(/\s+/).length : 0;
+        cCountEl.innerText = `${words} words`;
+      }
+    }
+
+    // ==========================================
+    // MODULAR STORY BLOCKS ENGINE (Screenshot Match)
+    // ==========================================
+    function getCurrentStoryBlocks() {
+      if (!stories[currentStoryIndex]) return [];
+      if (!Array.isArray(stories[currentStoryIndex].blocks)) {
+        stories[currentStoryIndex].blocks = [];
+      }
+      return stories[currentStoryIndex].blocks;
+    }
+
+    function createStoryBlockObject(type) {
+      const id = 'block_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      switch(type) {
+        case 'heading':
+          return { id, type, content: 'New Section Sub-heading' };
+        case 'quote':
+          return { id, type, quote: 'A compelling statement from a key source or interview.', attribution: 'Speaker Name, Title' };
+        case 'image':
+          return { 
+            id, 
+            type, 
+            url: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&w=1200&q=80', 
+            caption: 'Artistic visualization of the subject or event.',
+            source: 'Photo Credit / News Wire'
+          };
+        case 'paragraph':
+        default:
+          return { id, type: 'paragraph', content: 'Type additional journalistic reporting, analysis, or contextual narrative here...' };
+      }
+    }
+
+    function addStoryBlock(type) {
+      const blocks = getCurrentStoryBlocks();
+      const newBlock = createStoryBlockObject(type);
+      blocks.push(newBlock);
+      renderStoryBlocks();
+
+      setTimeout(() => {
+        const el = document.getElementById(newBlock.id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 80);
+    }
+
+    function removeStoryBlock(id) {
+      if (!stories[currentStoryIndex]) return;
+      stories[currentStoryIndex].blocks = getCurrentStoryBlocks().filter(b => b.id !== id);
+      renderStoryBlocks();
+    }
+
+    function moveStoryBlock(index, direction) {
+      const blocks = getCurrentStoryBlocks();
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= blocks.length) return;
+      const temp = blocks[index];
+      blocks[index] = blocks[targetIndex];
+      blocks[targetIndex] = temp;
+      renderStoryBlocks();
+    }
+
+    function renderStoryBlocks() {
+      const container = document.getElementById("storyBlocksContainer");
+      const badge = document.getElementById("blocksCountBadge");
+      if (!container) return;
+
+      const blocks = getCurrentStoryBlocks();
+      if (badge) badge.innerText = `${blocks.length} component${blocks.length === 1 ? '' : 's'}`;
+
+      if (blocks.length === 0) {
+        container.innerHTML = `
+          <div class="py-7 px-4 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white/50">
+            <p class="text-xs font-semibold text-slate-500">No components added yet</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Use the buttons below to attach images, quotes, paragraphs, or section headings.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = blocks.map((block, index) => {
+        const isFirst = index === 0;
+        const isLast = index === blocks.length - 1;
+
+        const controlsHtml = `
+          <div class="flex items-center gap-0.5">
+            <button 
+              type="button" 
+              onclick="moveStoryBlock(${index}, -1)" 
+              ${isFirst ? 'disabled class="text-slate-300 p-1 cursor-not-allowed"' : 'class="text-slate-500 hover:text-slate-800 p-1 hover:bg-slate-200 rounded transition"'} 
+              title="Move Up"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+            </button>
+            <button 
+              type="button" 
+              onclick="moveStoryBlock(${index}, 1)" 
+              ${isLast ? 'disabled class="text-slate-300 p-1 cursor-not-allowed"' : 'class="text-slate-500 hover:text-slate-800 p-1 hover:bg-slate-200 rounded transition"'} 
+              title="Move Down"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <button 
+              type="button" 
+              onclick="removeStoryBlock('${block.id}')" 
+              class="text-rose-400 hover:text-rose-600 p-1 hover:bg-rose-50 rounded transition ml-1" 
+              title="Delete Component"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+          </div>
+        `;
+
+        if (block.type === 'paragraph') {
+          return `
+            <div id="${block.id}" class="p-4 bg-white border border-slate-200 rounded-xl relative transition-shadow hover:shadow-xs">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center">
+                  <span class="w-2 h-2 rounded bg-slate-400 mr-2"></span> PARAGRAPH BLOCK #${index + 1}
+                </span>
+                ${controlsHtml}
+              </div>
+              <textarea 
+                rows="3" 
+                oninput="updateBlockProp('${block.id}', 'content', this.value)" 
+                class="w-full text-xs sm:text-sm bg-slate-50/50 border border-slate-200 rounded-lg p-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-sans leading-relaxed"
+              >${escapeHtml(block.content || '')}</textarea>
+            </div>
+          `;
+        } else if (block.type === 'heading') {
+          return `
+            <div id="${block.id}" class="p-4 bg-white border border-slate-200 rounded-xl relative transition-shadow hover:shadow-xs">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center">
+                  <span class="w-2 h-2 rounded bg-blue-500 mr-2"></span> SECTION SUBHEADING #${index + 1}
+                </span>
+                ${controlsHtml}
+              </div>
+              <input 
+                type="text" 
+                oninput="updateBlockProp('${block.id}', 'content', this.value)" 
+                value="${escapeHtml(block.content || '')}" 
+                class="w-full text-sm sm:text-base font-bold text-slate-900 bg-slate-50/50 border border-slate-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" 
+                placeholder="Sub-heading text..." 
+              />
+            </div>
+          `;
+        } else if (block.type === 'quote') {
+          return `
+            <div id="${block.id}" class="p-4 bg-white border border-slate-200 rounded-xl relative transition-shadow hover:shadow-xs">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center">
+                  <span class="w-2 h-2 rounded bg-emerald-500 mr-2"></span> PULLQUOTE BLOCK #${index + 1}
+                </span>
+                ${controlsHtml}
+              </div>
+              <div class="space-y-2">
+                <textarea 
+                  rows="2" 
+                  oninput="updateBlockProp('${block.id}', 'quote', this.value)" 
+                  class="w-full text-xs sm:text-sm italic bg-slate-50/50 border border-slate-200 rounded-lg p-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" 
+                  placeholder="Quote statement or excerpt..."
+                >${escapeHtml(block.quote || '')}</textarea>
+                <input 
+                  type="text" 
+                  oninput="updateBlockProp('${block.id}', 'attribution', this.value)" 
+                  value="${escapeHtml(block.attribution || '')}" 
+                  class="w-full text-xs bg-slate-50/50 border border-slate-200 rounded-lg p-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" 
+                  placeholder="Attribution / Speaker (e.g. Dr. Nikku Madhusudhan, Principal Investigator)" 
+                />
+              </div>
+            </div>
+          `;
+        } else if (block.type === 'image') {
+          return `
+            <div id="${block.id}" class="p-4 bg-white border border-slate-200 rounded-xl relative transition-shadow hover:shadow-xs">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-purple-600 uppercase tracking-wider flex items-center">
+                  <span class="w-2 h-2 rounded bg-purple-500 mr-2"></span> ATTACHED IMAGE MEDIA #${index + 1}
+                </span>
+                ${controlsHtml}
+              </div>
+              <div class="space-y-2.5">
+                <div class="flex flex-col sm:flex-row gap-2">
+                  <input 
+                    type="text" 
+                    oninput="updateBlockProp('${block.id}', 'url', this.value); updateImageBlockPreview('${block.id}', this.value);" 
+                    value="${escapeHtml(block.url || '')}" 
+                    class="flex-1 text-xs bg-slate-50/50 border border-slate-200 rounded-lg p-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 font-mono" 
+                    placeholder="Image URL (https://...)" 
+                  />
+                  <label class="px-3.5 py-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg cursor-pointer text-center flex items-center justify-center transition shrink-0 border border-slate-200 shadow-2xs">
+                    <span>Upload File</span>
+                    <input type="file" accept="image/*" onchange="handleImageBlockUpload(event, '${block.id}')" class="hidden" />
+                  </label>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input 
+                    type="text" 
+                    oninput="updateBlockProp('${block.id}', 'caption', this.value)" 
+                    value="${escapeHtml(block.caption || '')}" 
+                    class="text-xs bg-slate-50/50 border border-slate-200 rounded-lg p-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500" 
+                    placeholder="Artistic visualization / caption..." 
+                  />
+                  <input 
+                    type="text" 
+                    oninput="updateBlockProp('${block.id}', 'source', this.value)" 
+                    value="${escapeHtml(block.source || '')}" 
+                    class="text-xs bg-slate-50/50 border border-slate-200 rounded-lg p-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500" 
+                    placeholder="Photo agency / credit (e.g. NASA / ESA / Reuters)" 
+                  />
+                </div>
+
+                <!-- Full preview in editor -->
+                <div class="w-full max-h-[500px] bg-slate-950/90 rounded-xl overflow-hidden relative border border-slate-200 shadow-2xs flex items-center justify-center p-1">
+                  <img 
+                    id="img_preview_${block.id}" 
+                    src="${escapeHtml(block.url || '')}" 
+                    onerror="this.src='https://placehold.co/600x300/e2e8f0/475569?text=No+Image+Loaded'" 
+                    class="w-full h-auto max-h-[490px] object-contain rounded-lg" 
+                    alt="Component Image Preview" 
+                  />
+                </div>
+              </div>
+            </div>
+          `;
+        }
+        return '';
+      }).join('');
+    }
+
+    function updateBlockProp(id, key, val) {
+      const blocks = getCurrentStoryBlocks();
+      const b = blocks.find(item => item.id === id);
+      if (b) b[key] = val;
+    }
+
+    function updateImageBlockPreview(id, url) {
+      const img = document.getElementById(`img_preview_${id}`);
+      if (img) img.src = url || '';
+    }
+
+    function setBlockImagePreset(id, type) {
+      const presets = {
+        space: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&w=1200&q=80',
+        city: 'https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=1200&q=80',
+        nature: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80'
+      };
+      if (presets[type]) {
+        updateBlockProp(id, 'url', presets[type]);
+        renderStoryBlocks();
+      }
+    }
+
+    function handleImageBlockUpload(e, id) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          updateBlockProp(id, 'url', event.target.result);
+          renderStoryBlocks();
+          showSaveStatus('Image file loaded into component');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    async function saveCurrentStory() {
+      if (!stories || stories.length === 0 || currentStoryIndex < 0 || currentStoryIndex >= stories.length) return;
+
+      handleFieldInput();
+      const storyToSave = stories[currentStoryIndex];
+
+      const saveBtn = document.getElementById("saveStoryBtn");
+      const saveBtnText = document.getElementById("saveBtnText");
+      const spinner = document.getElementById("saveSpinner");
+      const saveIcon = document.getElementById("saveIcon");
+
+      if (saveBtn) saveBtn.disabled = true;
+      if (saveBtnText) saveBtnText.innerText = "Saving...";
+      if (spinner) spinner.classList.remove("hidden");
+      if (saveIcon) saveIcon.classList.add("hidden");
+
+      try {
+        const response = await fetch("/api/story/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            index: currentStoryIndex,
+            story: storyToSave
+          })
+        });
+
+        if (response.ok) {
+          showSaveStatus("Story updated successfully!");
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          showSaveStatus(errData.detail || "Failed to save story", true);
+        }
+      } catch (err) {
+        showSaveStatus("Network error while saving", true);
+      } finally {
+        if (saveBtn) saveBtn.disabled = false;
+        if (saveBtnText) saveBtnText.innerText = "Save Story";
+        if (spinner) spinner.classList.add("hidden");
+        if (saveIcon) saveIcon.classList.remove("hidden");
+      }
+    }
+
+    async function fetchCurrentStory() {
+      if (!stories || stories.length === 0 || currentStoryIndex < 0 || currentStoryIndex >= stories.length) return;
+
+      const current = stories[currentStoryIndex];
+      const url = current.url;
+      if (!url || !url.startsWith("http")) {
+        showSaveStatus("No valid source URL found for this story", true);
+        return;
+      }
+
+      const fetchBtn = document.getElementById("fetchStoryBtn");
+      const fetchBtnText = document.getElementById("fetchBtnText");
+      const spinner = document.getElementById("fetchSpinner");
+      const icon = document.getElementById("fetchIcon");
+
+      if (fetchBtn) fetchBtn.disabled = true;
+      if (fetchBtnText) fetchBtnText.innerText = "Fetching...";
+      if (spinner) spinner.classList.remove("hidden");
+      if (icon) icon.classList.add("hidden");
+
+      try {
+        const response = await fetch("/api/story/fetch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: url })
+        });
+
+        if (response.ok) {
+          const resData = await response.json();
+          const fetched = resData.data;
+
+          // Populate current story in memory with fetched data
+          if (fetched.heading) current.heading = fetched.heading;
+          if (fetched.subheading) current.subheading = fetched.subheading;
+          if (fetched.summary) current.summary = fetched.summary;
+          if (fetched.content) current.content = fetched.content;
+          if (fetched.author) current.author = fetched.author;
+          if (fetched.date) current.date = fetched.date;
+          if (fetched.image) current.image = fetched.image;
+          if (fetched.sitename) current.sitename = fetched.sitename;
+          if (fetched.blocks && fetched.blocks.length > 0) {
+            current.blocks = fetched.blocks;
+          }
+
+          // Automatically add fetched image to modular media components if available
+          if (fetched.image && fetched.image.trim()) {
+            if (!Array.isArray(current.blocks)) {
+              current.blocks = [];
+            }
+            const imgUrl = fetched.image.trim();
+            const existingImg = current.blocks.find(b => b.type === 'image' && b.url === imgUrl);
+            if (!existingImg) {
+              current.blocks.push({
+                id: 'block_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+                type: 'image',
+                url: imgUrl,
+                caption: fetched.subheading || fetched.heading || 'News story visual coverage',
+                source: fetched.sitename || fetched.author || 'Source Wire / Photo'
+              });
+            }
+          }
+
+          // Re-render UI with newly populated fields
+          renderStoryDetails(current);
+
+          // Update dropdown title if heading was fetched
+          const selectEl = document.getElementById("storySelect");
+          if (selectEl && selectEl.options[currentStoryIndex]) {
+            const title = current.heading || "Untitled Story";
+            selectEl.options[currentStoryIndex].text = `${currentStoryIndex + 1}. ${title.slice(0, 90)}${title.length > 90 ? "..." : ""}`;
+          }
+
+          // Immediately persist fetched content to backend
+          try {
+            const saveResp = await fetch("/api/story/update", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                index: currentStoryIndex,
+                story: current
+              })
+            });
+            if (saveResp.ok) {
+              showSaveStatus("Article fetched and saved successfully!");
+            } else {
+              const saveErr = await saveResp.json().catch(() => ({}));
+              showSaveStatus(`Fetched, but failed to save: ${saveErr.detail || 'Unknown error'}`, true);
+            }
+          } catch (persistErr) {
+            showSaveStatus("Fetched, but error occurred while auto-saving", true);
+          }
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          showSaveStatus(errData.detail || "Failed to fetch article", true);
+        }
+      } catch (err) {
+        showSaveStatus("Network error while fetching article", true);
+      } finally {
+        if (fetchBtn) fetchBtn.disabled = false;
+        if (fetchBtnText) fetchBtnText.innerText = "Fetch";
+        if (spinner) spinner.classList.add("hidden");
+        if (icon) icon.classList.remove("hidden");
+      }
+    }
+
+    function showSaveStatus(msg, isError = false) {
+      const el = document.getElementById("saveStatusMessage");
+      if (!el) return;
+      el.innerText = msg;
+      el.className = `text-xs transition-opacity duration-300 ${isError ? 'text-rose-500 font-medium' : 'text-emerald-600 font-medium'}`;
+      el.style.opacity = "1";
+      setTimeout(() => {
+        el.style.opacity = "0";
+      }, 3500);
     }
 
     function escapeHtml(str) {

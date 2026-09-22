@@ -12,6 +12,7 @@ dependencies = [
     "lingua-language-detector>=2.2.0",
     "load-dotenv>=0.1.0",
     "python-multipart>=0.0.32",
+    "trafilatura>=2.2.0",
     "uvicorn>=0.52.4",
     "vercel>=0.10.0",
 ]

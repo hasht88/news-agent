@@ -7,12 +7,12 @@ from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from vercel.blob import BlobClient
 from urllib.parse import urljoin
-from app.models import AgentSettings
+from app.models import AgentSettings, StoryUpdateRequest, StoryItem, StoryFetchRequest
 from app.storage import load_settings, save_settings, is_blob_configured
 from curl_cffi import requests
 from collections import defaultdict
 from lingua import Language, LanguageDetectorBuilder
-
+from trafilatura import extract, extract_metadata
 
 client = BlobClient()
 if os.environ.get("VERCEL"):
@@ -322,6 +322,7 @@ def save_selected_news(items: list[dict]):
             "date": "",
             "sitename":"",
             "source_language":"",
+            "blocks": it.get("blocks", []),
         }
         if "tags" in it and it.get("tags"):
             clean_it["tags"] = it["tags"]
@@ -426,3 +427,145 @@ async def save_all_settings(settings: AgentSettings):
     if not success:
         raise HTTPException(status_code=500, detail="Failed to save settings.")
     return {"status": "success", "message": "Settings saved successfully!", "settings": updated}
+
+@app.post("/api/story/update")
+async def update_story_item(payload: StoryUpdateRequest):
+    stories = load_selected_news()
+    if payload.index < 0 or payload.index >= len(stories):
+        raise HTTPException(status_code=404, detail="Story index out of range.")
+    
+    updated_dict = payload.story.model_dump()
+    stories[payload.index] = updated_dict
+    
+    # Save back to storage
+    ensure_data_dir()
+    if os.environ.get("VERCEL"):
+        if is_blob_configured():
+            try:
+                client.put(
+                    "data/selected_news.json",
+                    json.dumps(stories, ensure_ascii=False),
+                    access="private",
+                    content_type="application/json",
+                    overwrite=True
+                )
+            except Exception as e:
+                print(f"Error updating selected news to blob: {e}")
+                raise HTTPException(status_code=500, detail="Failed to save story to blob.")
+    else:
+        try:
+            with open(SELECTED_NEWS_FILE, "w", encoding="utf-8") as f:
+                json.dump(stories, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Error updating selected news file: {e}")
+            raise HTTPException(status_code=500, detail="Failed to save story to file.")
+
+    return {"status": "success", "message": "Story saved successfully!", "story": updated_dict}
+
+@app.post("/api/story/fetch")
+async def fetch_story_from_url(payload: StoryFetchRequest):
+    url = (payload.url or "").strip()
+    if not url or not url.startswith("http"):
+        raise HTTPException(status_code=400, detail="A valid HTTP/HTTPS URL is required.")
+
+    html_content = ""
+    # Try httpx first
+    try:
+        resp = httpx.get(url, headers=custom_headers, timeout=20, follow_redirects=True)
+        if resp.status_code == 200 and len(resp.text) > 500:
+            html_content = resp.text
+    except Exception as e:
+        print(f"httpx fetch failed for {url}: {e}")
+
+    # Fallback to curl_cffi with chrome impersonation
+    if not html_content:
+        try:
+            resp = requests.get(url, impersonate="chrome124", headers=dawn_headers, timeout=25)
+            if resp.status_code == 200:
+                html_content = resp.text
+        except Exception as e:
+            print(f"curl_cffi fetch failed for {url}: {e}")
+            raise HTTPException(status_code=502, detail=f"Failed to fetch content from URL: {e}")
+
+    if not html_content:
+        raise HTTPException(status_code=502, detail="Unable to retrieve HTML content from URL.")
+
+    soup = BeautifulSoup(html_content, "html.parser")
+    text_md = extract(resp.text, output_format="markdown")
+    # text_json = extract(resp.text, output_format="json")
+    meta = extract_metadata(resp.text)
+    # body = json.loads(text_json)['text']
+    body =text_md
+    # 1. Headline / Heading
+    og_title = soup.find("meta", property="og:title")
+    tw_title = soup.find("meta", attrs={"name": "twitter:title"})
+    h1 = soup.find("h1")
+    title_tag = soup.find("title")
+    heading = (og_title.get("content") if og_title else None) or \
+              (tw_title.get("content") if tw_title else None) or \
+              (h1.get_text(strip=True) if h1 else None) or \
+              (title_tag.get_text(strip=True) if title_tag else "")
+
+    # 2. Subheading / Meta description
+    og_desc = soup.find("meta", property="og:description")
+    meta_desc = soup.find("meta", attrs={"name": "description"})
+    tw_desc = soup.find("meta", attrs={"name": "twitter:description"})
+    subheading = (og_desc.get("content") if og_desc else None) or \
+              (meta_desc.get("content") if meta_desc else None) or \
+              (tw_desc.get("content") if tw_desc else "")
+
+    # 4. Lead Image
+    og_img = soup.find("meta", property="og:image")
+    tw_img = soup.find("meta", attrs={"name": "twitter:image"})
+    image = (og_img.get("content") if og_img else None) or \
+            (tw_img.get("content") if tw_img else "")
+    if image:
+        image = urljoin(url, image)
+
+    # 5. Author
+    meta_author = soup.find("meta", attrs={"name": "author"}) or soup.find("meta", property="article:author")
+    author_el = soup.find(class_=lambda c: c and any(k in c.lower() for k in ["author__name", "byline", "author-name", "author"]))
+    author = (meta_author.get("content") if meta_author and meta_author.get("content") else None) or \
+             (author_el.get_text(strip=True) if author_el else "")
+
+    # 6. Publish Date
+    date_meta = soup.find("meta", property="article:published_time") or \
+                soup.find("meta", attrs={"name": "publish-date"}) or \
+                soup.find("meta", attrs={"name": "pubdate"})
+    time_el = soup.find("time")
+    date_str = (date_meta.get("content") if date_meta and date_meta.get("content") else None) or \
+               (time_el.get_text(strip=True) if time_el else "")
+
+    # 7. Article Body Paragraphs
+
+    # # If summary is still empty, use first paragraph as lead summary
+    # if not subheading and paragraphs:
+    #     subheading = paragraphs[0]
+    #
+    # # Generate initial modular blocks if paragraphs exist
+    # modular_blocks = []
+    # for idx, p_text in enumerate(paragraphs[:5]):
+    #     modular_blocks.append({
+    #         "id": f"block_fetched_{idx + 1}",
+    #         "type": "paragraph",
+    #         "content": p_text
+    #     })
+
+    # Site name
+    og_site = soup.find("meta", property="og:site_name")
+    sitename = og_site.get("content") if og_site else ""
+
+    return {
+        "status": "success",
+        "data": {
+            "heading": meta.title,
+            "subheading": meta.description,
+            "summary": "",
+            "content": body,
+            "author": meta.author,
+            "date": meta.date,
+            "image": meta.image,
+            "sitename": meta.sitename,
+            "blocks": ""
+        }
+    }

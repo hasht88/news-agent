@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Newsroom Studio - Story Creation Workflow</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter for UI, Merriweather for Editorial Reading -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Newsreader', 'Merriweather', 'serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar styling for editorial canvas */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .custom-prose p {
+      margin-bottom: 1.25rem;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+  <!-- Top Navigation & Workflow Bar -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 px-4 sm:px-6 py-3 shadow-sm">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Brand & Workflow Status -->
+      <div class="flex items-center space-x-3">
+        <div class="bg-slate-900 text-white p-2 rounded-lg flex items-center justify-center font-bold tracking-tighter text-base shadow-sm">
+          <svg class="w-5 h-5 text-indigo-400 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+          </svg>
+          NEWSROOM
+        </div>
+        <div class="h-5 w-px bg-slate-200 hidden sm:block"></div>
+        <div class="flex items-center space-x-2">
+          <span class="text-xs uppercase tracking-wider font-semibold text-slate-400">Status:</span>
+          <select id="workflowStatus" class="text-xs font-medium bg-amber-50 text-amber-800 border border-amber-300 rounded-full px-2.5 py-1 focus:ring-2 focus:ring-amber-400 focus:outline-none cursor-pointer">
+            <option value="draft">🟡 Draft (Authoring)</option>
+            <option value="review">🔵 In Review (Desk Editor)</option>
+            <option value="ready">🟢 Ready to Publish</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Real-time Metrics & View Controls -->
+      <div class="flex items-center space-x-4">
+        <div class="hidden md:flex items-center space-x-3 text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+          <div><span id="statWordCount" class="font-bold text-slate-800">0</span> words</div>
+          <span class="text-slate-300">•</span>
+          <div><span id="statReadTime" class="font-bold text-slate-800">0</span> min read</div>
+          <span class="text-slate-300">•</span>
+          <div><span id="statBlocksCount" class="font-bold text-slate-800">0</span> components</div>
+        </div>
+
+        <!-- Mode Switches for Tablet/Mobile -->
+        <div class="flex lg:hidden bg-slate-100 p-1 rounded-lg text-xs font-semibold">
+          <button id="tabBtnEditor" onclick="switchViewMode('editor')" class="px-3 py-1.5 rounded-md bg-white shadow-sm text-slate-900">Editor</button>
+          <button id="tabBtnPreview" onclick="switchViewMode('preview')" class="px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-900">Live Preview</button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center space-x-2">
+          <button onclick="openExportModal()" class="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors flex items-center shadow-xs">
+            <svg class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+            </svg>
+            Export / Code
+          </button>
+          <button onclick="handlePublishAction()" class="px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-all flex items-center hover:shadow">
+            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Publish Article
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace (Editor vs Live Reader Preview) -->
+  <main class="max-w-7xl mx-auto w-full p-4 sm:p-6 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    
+    <!-- LEFT COLUMN: Workflow Editor -->
+    <div id="editorPanel" class="lg:col-span-7 flex flex-col space-y-6">
+      
+      <!-- Card 1: Story Meta & Anchor Elements -->
+      <section class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
+        <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-3.5 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="flex h-2 w-2 rounded-full bg-indigo-600"></span>
+            <h2 class="text-sm font-semibold text-slate-800 uppercase tracking-wide">Story Meta & Overview</h2>
+          </div>
+          <span class="text-xs text-slate-400">Stage 1 of 3</span>
+        </div>
+
+        <div class="p-5 space-y-4">
+          <!-- Category & Tags -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Section</label>
+              <select id="metaCategory" onchange="renderLivePreview()" class="w-full text-xs font-medium rounded-lg border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none p-2 border">
+                <option value="WORLD NEWS">World News</option>
+                <option value="TECHNOLOGY & AI" selected>Technology & AI</option>
+                <option value="SCIENCE & SPACE">Science & Space</option>
+                <option value="CLIMATE & ENVIRONMENT">Climate & Environment</option>
+                <option value="BUSINESS & ECONOMY">Business & Economy</option>
+                <option value="INVESTIGATIVE">Investigative</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Byline (Author)</label>
+              <input type="text" id="metaAuthor" value="Elena Rostova" oninput="renderLivePreview()" class="w-full text-xs rounded-lg border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none p-2 border" placeholder="Reporter name...">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Publish Date / Location</label>
+              <input type="text" id="metaDateline" value="GENEVA — Sept 15, 2026" oninput="renderLivePreview()" class="w-full text-xs rounded-lg border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none p-2 border" placeholder="e.g. LONDON — Today">
+            </div>
+          </div>
+
+          <!-- Component: Headline / Heading -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
+                <span class="w-1.5 h-3.5 bg-indigo-600 rounded-sm mr-1.5"></span> Headline (Primary Heading)
+              </label>
+              <span class="text-[11px] text-slate-400 font-mono" id="headlineCount">0 chars</span>
+            </div>
+            <textarea id="metaHeading" rows="2" oninput="renderLivePreview()" class="w-full text-base sm:text-lg font-serif font-bold text-slate-900 rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none leading-snug" placeholder="Enter a punchy, accurate news headline...">Atmospheric Biosignature Candidate Detected on Temperate Exoplanet K2-18 b</textarea>
+          </div>
+
+          <!-- Component: Subheading / Deck -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Subheading (Deck / Sub-headline)</label>
+              <span class="text-[11px] text-slate-400 font-mono" id="subheadingCount">0 chars</span>
+            </div>
+            <textarea id="metaSubheading" rows="2" oninput="renderLivePreview()" class="w-full text-sm text-slate-700 rounded-lg border border-slate-300 p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none leading-relaxed" placeholder="Elaborate on the headline with context or key impact...">High-precision spectroscopic measurements from international space telescopes reveal water vapor and methane in an ocean-covered world's atmosphere.</textarea>
+          </div>
+
+          <!-- Component: Executive Summary / Lead Paragraph -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider flex items-center">
+                <svg class="w-3.5 h-3.5 mr-1 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm.75 11.25a.75.75 0 01-1.5 0v-5a.75.75 0 011.5 0v5zm-.75-7.5a.75.75 0 110-1.5.75.75 0 010 1.5z"></path>
+                </svg>
+                Story Summary (Lead / TL;DR Box)
+              </label>
+              <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-medium">Front-page callout</span>
+            </div>
+            <textarea id="metaSummary" rows="3" oninput="renderLivePreview()" class="w-full text-xs sm:text-sm bg-amber-50/40 text-slate-800 rounded-lg border border-amber-200/80 p-3 focus:ring-2 focus:ring-amber-500 focus:bg-white outline-none leading-relaxed" placeholder="Summarize the core scoop in 2-3 essential sentences for quick reading...">An international astrophysics consortium confirmed today that observations of exoplanet K2-18 b have yielded the strongest spectral signature to date of carbon-bearing molecules within a habitable-zone atmosphere. While scientists urge caution regarding definitive biological origin, the breakthrough marks a watershed moment in the search for extraterrestrial life.</textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 2: Interactive Story Body Components -->
+      <section class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
+        <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-3.5 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="flex h-2 w-2 rounded-full bg-emerald-600"></span>
+            <h2 class="text-sm font-semibold text-slate-800 uppercase tracking-wide">Story Body Builder (Modular Blocks)</h2>
+          </div>
+          <span class="text-xs text-slate-400">Reorder & Add Elements</span>
+        </div>
+
+        <div class="p-5">
+          <!-- Dynamic Components Container -->
+          <div id="blocksContainer" class="space-y-4">
+            <!-- Dynamically populated blocks injected via JS -->
+          </div>
+
+          <!-- Component Action Tool Palette -->
+          <div class="mt-6 pt-5 border-t border-slate-200">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3 flex items-center">
+              <svg class="w-4 h-4 mr-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              </svg>
+              Insert Story Component:
+            </p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button onclick="addBlock('paragraph')" class="flex items-center justify-center p-2.5 rounded-lg border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 text-xs font-medium text-slate-700 transition group">
+                <svg class="w-4 h-4 mr-1.5 text-slate-400 group-hover:text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
+                </svg>
+                + Paragraph
+              </button>
+
+              <button onclick="addBlock('heading')" class="flex items-center justify-center p-2.5 rounded-lg border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 text-xs font-medium text-slate-700 transition group">
+                <svg class="w-4 h-4 mr-1.5 text-slate-400 group-hover:text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                </svg>
+                + Sub-heading
+              </button>
+
+              <button onclick="addBlock('image')" class="flex items-center justify-center p-2.5 rounded-lg border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 text-xs font-medium text-slate-700 transition group">
+                <svg class="w-4 h-4 mr-1.5 text-slate-400 group-hover:text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                + Image Media
+              </button>
+
+              <button onclick="addBlock('quote')" class="flex items-center justify-center p-2.5 rounded-lg border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 text-xs font-medium text-slate-700 transition group">
+                <svg class="w-4 h-4 mr-1.5 text-slate-400 group-hover:text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+                </svg>
+                + Pullquote
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Real-Time Editorial News Preview -->
+    <div id="previewPanel" class="lg:col-span-5 hidden lg:block sticky top-20">
+      <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden flex flex-col max-h-[calc(100vh-6rem)]">
+        
+        <!-- Live Preview Chrome Header -->
+        <div class="px-4 py-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+          <div class="flex items-center space-x-2">
+            <span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+            <span class="text-xs font-mono text-slate-400 ml-2">Reader Experience Preview</span>
+          </div>
+          <div class="flex items-center space-x-2 text-xs">
+            <span class="bg-indigo-900/80 text-indigo-300 px-2 py-0.5 rounded border border-indigo-700 text-[10px] uppercase font-bold tracking-wider">Live Sync</span>
+          </div>
+        </div>
+
+        <!-- Rendered Article Surface -->
+        <div id="readerSurface" class="p-6 sm:p-8 overflow-y-auto bg-white font-serif">
+          
+          <!-- Category Pill -->
+          <div id="pvCategory" class="font-sans text-[11px] font-bold tracking-widest text-indigo-700 uppercase mb-3">
+            TECHNOLOGY & AI
+          </div>
+
+          <!-- Live Headline -->
+          <h1 id="pvHeadline" class="text-2xl sm:text-3xl font-serif font-bold text-slate-950 leading-tight mb-3 tracking-tight">
+            Headline goes here...
+          </h1>
+
+          <!-- Live Subheading -->
+          <p id="pvSubheading" class="text-base sm:text-lg text-slate-600 font-serif italic leading-relaxed mb-5 pb-5 border-b border-slate-200">
+            Subheading elaboration goes here...
+          </p>
+
+          <!-- Byline and Dateline info -->
+          <div class="font-sans flex items-center justify-between text-xs text-slate-500 mb-6 pb-2">
+            <div>
+              By <span id="pvAuthor" class="font-bold text-slate-800">Elena Rostova</span>
+            </div>
+            <div id="pvDateline" class="text-slate-400">
+              GENEVA — Sept 15, 2026
+            </div>
+          </div>
+
+          <!-- Live Summary/TLDR Box -->
+          <div id="pvSummaryWrapper" class="font-sans mb-6 bg-slate-50 border-l-4 border-indigo-600 p-4 rounded-r-lg">
+            <div class="text-[11px] font-bold text-indigo-900 uppercase tracking-wider mb-1 flex items-center">
+              <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
+                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"></path>
+              </svg>
+              Key Takeaways
+            </div>
+            <p id="pvSummary" class="text-xs sm:text-sm text-slate-700 leading-relaxed font-sans">
+              Summary contents here...
+            </p>
+          </div>
+
+          <!-- Dynamic Blocks Output -->
+          <div id="pvBody" class="space-y-5 text-slate-800 font-serif leading-relaxed text-base">
+            <!-- Dynamic elements render here -->
+          </div>
+
+          <!-- News Footer Tag -->
+          <div class="mt-10 pt-6 border-t border-slate-200 font-sans text-xs text-slate-400 flex justify-between items-center">
+            <span>© 2026 Global Wire Editorial Syndicate</span>
+            <span class="text-slate-300 font-mono">End of Story</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Export Modal -->
+  <div id="exportModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Export Published Article</h3>
+          <p class="text-xs text-slate-500">Copy structured HTML or JSON payload for your CMS</p>
+        </div>
+        <button onclick="closeExportModal()" class="text-slate-400 hover:text-slate-700 p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="mt-4">
+        <div class="flex space-x-2 mb-2">
+          <button id="exportTabHtml" onclick="switchExportTab('html')" class="text-xs font-semibold px-3 py-1.5 bg-slate-900 text-white rounded-md">Clean HTML</button>
+          <button id="exportTabJson" onclick="switchExportTab('json')" class="text-xs font-semibold px-3 py-1.5 bg-slate-100 text-slate-600 rounded-md">JSON Article Schema</button>
+        </div>
+        <textarea id="exportCodeOutput" rows="12" readonly class="w-full font-mono text-xs p-3.5 bg-slate-900 text-emerald-400 rounded-xl focus:outline-none overflow-x-auto selection:bg-emerald-900"></textarea>
+      </div>
+
+      <div class="mt-4 flex justify-between items-center">
+        <span id="exportCopyNotice" class="text-xs text-emerald-600 font-semibold opacity-0 transition-opacity">Copied to clipboard!</span>
+        <div class="flex space-x-2">
+          <button onclick="closeExportModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Close</button>
+          <button onclick="copyExportContent()" class="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm">Copy to Clipboard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl border border-slate-700 text-xs font-medium flex items-center space-x-2 transition-all duration-300 transform translate-y-12 opacity-0 pointer-events-none z-50">
+    <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+    </svg>
+    <span id="toastMsg">Article updated</span>
+  </div>
+
+  <script>
+    // Component Store State
+    let storyBlocks = [
+      {
+        id: 'block_1',
+        type: 'paragraph',
+        content: 'Astronomers analyzing high-resolution transmission spectra gathered during multiple planetary transits have confirmed trace abundances of dimethyl sulfide (DMS) alongside carbon dioxide and methane in the atmosphere of sub-Neptune exoplanet K2-18 b, situated roughly 120 light-years away in the constellation Leo.'
+      },
+      {
+        id: 'block_2',
+        type: 'heading',
+        content: 'Signatures from an Alien Ocean Realm'
+      },
+      {
+        id: 'block_3',
+        type: 'paragraph',
+        content: 'K2-18 b orbits within the habitable zone of its cool red dwarf star, where temperatures allow liquid water to pool. The planet is classified as a "Hycean" world—a theoretical class of exoplanets possessing hydrogen-rich atmospheres above extensive water oceans.'
+      },
+      {
+        id: 'block_4',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&w=1200&q=80',
+        caption: 'Artistic visualization of Hycean exoplanet K2-18 b and its parent M-dwarf host star.',
+        source: 'NASA / ESA / CSA / Science Visuals Team',
+        aspect: 'standard'
+      },
+      {
+        id: 'block_5',
+        type: 'quote',
+        quote: 'We have never seen spectral lines of this characterization on any world beyond our Solar System. It challenges all conventional atmospheric models.',
+        attribution: 'Dr. Nikku Madhusudhan, Principal Investigator'
+      },
+      {
+        id: 'block_6',
+        type: 'paragraph',
+        content: 'Further confirmation will require scheduled deep-stare observations utilizing next-generation infrared coronagraphs to isolate atmospheric backscattering from stellar flare activity.'
+      }
+    ];
+
+    let currentExportTab = 'html';
+
+    // Block factory
+    function createBlockObject(type) {
+      const id = 'block_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      switch(type) {
+        case 'heading':
+          return { id, type, content: 'New Section Sub-heading' };
+        case 'quote':
+          return { id, type, quote: 'A compelling statement from a key source or interview.', attribution: 'Speaker Name, Title' };
+        case 'image':
+          return { 
+            id, 
+            type, 
+            url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80', 
+            caption: 'Add a descriptive journalistic caption explaining the visual context.',
+            source: 'Photo Credit / Reuters',
+            aspect: 'standard'
+          };
+        case 'paragraph':
+        default:
+          return { id, type: 'paragraph', content: 'Type additional journalistic reporting, analysis, or contextual narrative here...' };
+      }
+    }
+
+    // Add block function
+    function addBlock(type) {
+      const newBlock = createBlockObject(type);
+      storyBlocks.push(newBlock);
+      renderEditorBlocks();
+      renderLivePreview();
+      showToast(`Added ${type} component`);
+      
+      // Auto scroll to latest block
+      setTimeout(() => {
+        const el = document.getElementById(newBlock.id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+
+    // Remove block
+    function removeBlock(id) {
+      storyBlocks = storyBlocks.filter(b => b.id !== id);
+      renderEditorBlocks();
+      renderLivePreview();
+      showToast('Component removed');
+    }
+
+    // Move block up or down
+    function moveBlock(index, direction) {
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= storyBlocks.length) return;
+      const temp = storyBlocks[index];
+      storyBlocks[index] = storyBlocks[targetIndex];
+      storyBlocks[targetIndex] = temp;
+      renderEditorBlocks();
+      renderLivePreview();
+    }
+
+    // Render the builder forms
+    function renderEditorBlocks() {
+      const container = document.getElementById('blocksContainer');
+      container.innerHTML = '';
+
+      storyBlocks.forEach((block, index) => {
+        const blockEl = document.createElement('div');
+        blockEl.id = block.id;
+        blockEl.className = "p-4 bg-slate-50 border border-slate-200 rounded-xl relative group transition-shadow hover:shadow-xs hover:border-slate-300";
+
+        let controlsHtml = `
+          <div class="flex items-center space-x-1">
+            <button onclick="moveBlock(${index}, -1)" ${index === 0 ? 'disabled class="text-slate-300 p-1 cursor-not-allowed"' : 'class="text-slate-500 hover:text-slate-800 p-1 hover:bg-slate-200 rounded"'} title="Move Up">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+            </button>
+            <button onclick="moveBlock(${index}, 1)" ${index === storyBlocks.length - 1 ? 'disabled class="text-slate-300 p-1 cursor-not-allowed"' : 'class="text-slate-500 hover:text-slate-800 p-1 hover:bg-slate-200 rounded"'} title="Move Down">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <button onclick="removeBlock('${block.id}')" class="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded" title="Delete Component">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+          </div>
+        `;
+
+        if (block.type === 'paragraph') {
+          blockEl.innerHTML = `
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center">
+                <span class="w-2 h-2 rounded bg-slate-400 mr-2"></span> Paragraph Block #${index + 1}
+              </span>
+              ${controlsHtml}
+            </div>
+            <textarea rows="3" oninput="updateBlockContent('${block.id}', this.value)" class="w-full text-xs sm:text-sm bg-white border border-slate-200 rounded-lg p-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-serif leading-relaxed">${escapeHtml(block.content)}</textarea>
+          `;
+        } else if (block.type === 'heading') {
+          blockEl.innerHTML = `
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center">
+                <span class="w-2 h-2 rounded bg-indigo-500 mr-2"></span> Section Subheading #${index + 1}
+              </span>
+              ${controlsHtml}
+            </div>
+            <input type="text" oninput="updateBlockContent('${block.id}', this.value)" value="${escapeHtml(block.content)}" class="w-full text-sm sm:text-base font-bold text-slate-900 bg-white border border-slate-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-serif" placeholder="Sub-heading text..." />
+          `;
+        } else if (block.type === 'quote') {
+          blockEl.innerHTML = `
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center">
+                <span class="w-2 h-2 rounded bg-emerald-500 mr-2"></span> Pullquote Block #${index + 1}
+              </span>
+              ${controlsHtml}
+            </div>
+            <div class="space-y-2">
+              <textarea rows="2" oninput="updateQuoteBlock('${block.id}', 'quote', this.value)" class="w-full text-xs sm:text-sm italic bg-white border border-slate-200 rounded-lg p-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-serif" placeholder="Quote excerpt...">${escapeHtml(block.quote)}</textarea>
+              <input type="text" oninput="updateQuoteBlock('${block.id}', 'attribution', this.value)" value="${escapeHtml(block.attribution)}" class="w-full text-xs bg-white border border-slate-200 rounded-lg p-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Attribution / Source (e.g. Jane Doe, Chief Scientist)" />
+            </div>
+          `;
+        } else if (block.type === 'image') {
+          blockEl.innerHTML = `
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-purple-600 uppercase tracking-wider flex items-center">
+                <span class="w-2 h-2 rounded bg-purple-500 mr-2"></span> Attached Image Media #${index + 1}
+              </span>
+              ${controlsHtml}
+            </div>
+            <div class="space-y-2.5">
+              <div class="flex flex-col sm:flex-row gap-2">
+                <input type="text" oninput="updateImageBlock('${block.id}', 'url', this.value)" value="${escapeHtml(block.url)}" class="flex-1 text-xs bg-white border border-slate-200 rounded-lg p-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Image URL (https://...)" />
+                <label class="px-3 py-2 text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg cursor-pointer text-center flex items-center justify-center">
+                  <span>Upload File</span>
+                  <input type="file" accept="image/*" onchange="handleImageFileUpload(event, '${block.id}')" class="hidden" />
+                </label>
+              </div>
+
+              <!-- Quick Presets -->
+              <div class="flex items-center space-x-1 text-[11px] text-slate-500">
+                <span>Presets:</span>
+                <button type="button" onclick="setImagePreset('${block.id}', 'space')" class="hover:text-indigo-600 underline">Space</button>
+                <span>•</span>
+                <button type="button" onclick="setImagePreset('${block.id}', 'city')" class="hover:text-indigo-600 underline">City</button>
+                <span>•</span>
+                <button type="button" onclick="setImagePreset('${block.id}', 'nature')" class="hover:text-indigo-600 underline">Nature</button>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input type="text" oninput="updateImageBlock('${block.id}', 'caption', this.value)" value="${escapeHtml(block.caption)}" class="text-xs bg-white border border-slate-200 rounded-lg p-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Photo caption..." />
+                <input type="text" oninput="updateImageBlock('${block.id}', 'source', this.value)" value="${escapeHtml(block.source)}" class="text-xs bg-white border border-slate-200 rounded-lg p-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Source / Agency credit..." />
+              </div>
+
+              <!-- Thumbnail preview in editor -->
+              <div class="w-full h-28 bg-slate-200 rounded-lg overflow-hidden relative border border-slate-200">
+                <img src="${escapeHtml(block.url)}" onerror="this.src='https://placehold.co/600x300/e2e8f0/475569?text=Image+Load+Error'" class="w-full h-full object-cover" />
+              </div>
+            </div>
+          `;
+        }
+
+        container.appendChild(blockEl);
+      });
+
+      updateCharacterCounts();
+    }
+
+    // Helper updaters
+    function updateBlockContent(id, text) {
+      const b = storyBlocks.find(item => item.id === id);
+      if (b) b.content = text;
+      renderLivePreview();
+    }
+
+    function updateQuoteBlock(id, key, val) {
+      const b = storyBlocks.find(item => item.id === id);
+      if (b) b[key] = val;
+      renderLivePreview();
+    }
+
+    function updateImageBlock(id, key, val) {
+      const b = storyBlocks.find(item => item.id === id);
+      if (b) b[key] = val;
+      renderLivePreview();
+    }
+
+    function setImagePreset(id, type) {
+      const presets = {
+        space: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&w=1200&q=80',
+        city: 'https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=1200&q=80',
+        nature: 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=1200&q=80'
+      };
+      if (presets[type]) {
+        updateImageBlock(id, 'url', presets[type]);
+        renderEditorBlocks();
+      }
+    }
+
+    function handleImageFileUpload(e, id) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          updateImageBlock(id, 'url', event.target.result);
+          renderEditorBlocks();
+          showToast('Image uploaded successfully');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // Live preview engine
+    function renderLivePreview() {
+      // 1. Sync Metadata
+      const heading = document.getElementById('metaHeading').value || 'Untitled Story';
+      const subheading = document.getElementById('metaSubheading').value || '';
+      const summary = document.getElementById('metaSummary').value || '';
+      const author = document.getElementById('metaAuthor').value || 'Anonymous';
+      const dateline = document.getElementById('metaDateline').value || '';
+      const category = document.getElementById('metaCategory').value || 'GENERAL NEWS';
+
+      document.getElementById('pvHeadline').innerText = heading;
+      document.getElementById('pvSubheading').innerText = subheading;
+      document.getElementById('pvAuthor').innerText = author;
+      document.getElementById('pvDateline').innerText = dateline;
+      document.getElementById('pvCategory').innerText = category;
+
+      // Summary
+      const sumWrap = document.getElementById('pvSummaryWrapper');
+      const sumText = document.getElementById('pvSummary');
+      if (summary.trim() === '') {
+        sumWrap.classList.add('hidden');
+      } else {
+        sumWrap.classList.remove('hidden');
+        sumText.innerText = summary;
+      }
+
+      // 2. Render Dynamic Story Blocks
+      const pvBody = document.getElementById('pvBody');
+      pvBody.innerHTML = '';
+
+      storyBlocks.forEach(b => {
+        if (b.type === 'paragraph') {
+          const p = document.createElement('p');
+          p.className = "text-slate-800 leading-relaxed font-serif text-[15px] sm:text-base selection:bg-indigo-100";
+          p.innerText = b.content;
+          pvBody.appendChild(p);
+        } else if (b.type === 'heading') {
+          const h2 = document.createElement('h2');
+          h2.className = "text-xl sm:text-2xl font-bold font-serif text-slate-900 pt-3 pb-1 tracking-tight border-b border-slate-100";
+          h2.innerText = b.content;
+          pvBody.appendChild(h2);
+        } else if (b.type === 'quote') {
+          const bq = document.createElement('blockquote');
+          bq.className = "my-6 pl-4 border-l-4 border-indigo-500 italic text-slate-700 font-serif text-base sm:text-lg bg-slate-50 py-2.5 pr-3 rounded-r";
+          bq.innerHTML = `
+            <p class="mb-1.5">"${escapeHtml(b.quote)}"</p>
+            <cite class="not-italic text-xs font-sans font-semibold text-slate-500 uppercase tracking-wider block">— ${escapeHtml(b.attribution)}</cite>
+          `;
+          pvBody.appendChild(bq);
+        } else if (b.type === 'image') {
+          const figure = document.createElement('figure');
+          figure.className = "my-6 overflow-hidden rounded-xl bg-slate-50 border border-slate-200";
+          figure.innerHTML = `
+            <img src="${escapeHtml(b.url)}" alt="${escapeHtml(b.caption)}" onerror="this.src='https://placehold.co/800x400/e2e8f0/475569?text=Image+Unavailable'" class="w-full h-auto max-h-96 object-cover" />
+            <figcaption class="p-3 bg-slate-50 border-t border-slate-100 font-sans text-xs text-slate-600 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+              <span>${escapeHtml(b.caption)}</span>
+              <span class="text-[10px] text-slate-400 font-medium">${escapeHtml(b.source)}</span>
+            </figcaption>
+          `;
+          pvBody.appendChild(figure);
+        }
+      });
+
+      // 3. Compute Stats
+      updateLiveStats();
+      updateCharacterCounts();
+    }
+
+    // Word count & read time
+    function updateLiveStats() {
+      let fullText = [
+        document.getElementById('metaHeading').value,
+        document.getElementById('metaSubheading').value,
+        document.getElementById('metaSummary').value
+      ].join(' ');
+
+      storyBlocks.forEach(b => {
+        if (b.type === 'paragraph' || b.type === 'heading') fullText += ' ' + b.content;
+        if (b.type === 'quote') fullText += ' ' + b.quote + ' ' + b.attribution;
+        if (b.type === 'image') fullText += ' ' + b.caption;
+      });
+
+      const words = fullText.trim().split(/\s+/).filter(w => w.length > 0).length;
+      const readMins = Math.ceil(words / 200) || 1;
+
+      document.getElementById('statWordCount').innerText = words;
+      document.getElementById('statReadTime').innerText = words > 0 ? readMins : 0;
+      document.getElementById('statBlocksCount').innerText = storyBlocks.length + 3; // + heading, subheading, summary
+    }
+
+    function updateCharacterCounts() {
+      const hVal = document.getElementById('metaHeading').value || '';
+      const subVal = document.getElementById('metaSubheading').value || '';
+      document.getElementById('headlineCount').innerText = `${hVal.length} chars`;
+      document.getElementById('subheadingCount').innerText = `${subVal.length} chars`;
+    }
+
+    // Mobile View Toggle
+    function switchViewMode(mode) {
+      const editor = document.getElementById('editorPanel');
+      const preview = document.getElementById('previewPanel');
+      const btnEdit = document.getElementById('tabBtnEditor');
+      const btnPrev = document.getElementById('tabBtnPreview');
+
+      if (mode === 'preview') {
+        editor.classList.add('hidden');
+        preview.classList.remove('hidden');
+        btnPrev.className = "px-3 py-1.5 rounded-md bg-white shadow-sm text-slate-900";
+        btnEdit.className = "px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-900";
+      } else {
+        preview.classList.add('hidden');
+        editor.classList.remove('hidden');
+        btnEdit.className = "px-3 py-1.5 rounded-md bg-white shadow-sm text-slate-900";
+        btnPrev.className = "px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-900";
+      }
+    }
+
+    // Export Modal Handling
+    function openExportModal() {
+      generateExportData();
+      document.getElementById('exportModal').classList.remove('hidden');
+    }
+
+    function closeExportModal() {
+      document.getElementById('exportModal').classList.add('hidden');
+      document.getElementById('exportCopyNotice').classList.add('opacity-0');
+    }
+
+    function switchExportTab(tab) {
+      currentExportTab = tab;
+      const htmlBtn = document.getElementById('exportTabHtml');
+      const jsonBtn = document.getElementById('exportTabJson');
+
+      if (tab === 'html') {
+        htmlBtn.className = "text-xs font-semibold px-3 py-1.5 bg-slate-900 text-white rounded-md";
+        jsonBtn.className = "text-xs font-semibold px-3 py-1.5 bg-slate-100 text-slate-600 rounded-md";
+      } else {
+        jsonBtn.className = "text-xs font-semibold px-3 py-1.5 bg-slate-900 text-white rounded-md";
+        htmlBtn.className = "text-xs font-semibold px-3 py-1.5 bg-slate-100 text-slate-600 rounded-md";
+      }
+      generateExportData();
+    }
+
+    function generateExportData() {
+      const textarea = document.getElementById('exportCodeOutput');
+      const heading = document.getElementById('metaHeading').value;
+      const subheading = document.getElementById('metaSubheading').value;
+      const summary = document.getElementById('metaSummary').value;
+      const author = document.getElementById('metaAuthor').value;
+      const dateline = document.getElementById('metaDateline').value;
+      const category = document.getElementById('metaCategory').value;
+      const status = document.getElementById('workflowStatus').value;
+
+      if (currentExportTab === 'html') {
+        let html = `<!-- NEWS ARTICLE EXPORT -->\n<article class="news-article">\n`;
+        html += `  <header>\n`;
+        html += `    <span class="category">${escapeHtml(category)}</span>\n`;
+        html += `    <h1>${escapeHtml(heading)}</h1>\n`;
+        if (subheading) html += `    <p class="subheading">${escapeHtml(subheading)}</p>\n`;
+        html += `    <div class="byline">By <span>${escapeHtml(author)}</span> | <time>${escapeHtml(dateline)}</time></div>\n`;
+        if (summary) html += `    <div class="summary-box">\n      <strong>Summary:</strong>\n      <p>${escapeHtml(summary)}</p>\n    </div>\n`;
+        html += `  </header>\n  <div class="article-body">\n`;
+
+        storyBlocks.forEach(b => {
+          if (b.type === 'paragraph') html += `    <p>${escapeHtml(b.content)}</p>\n`;
+          if (b.type === 'heading') html += `    <h2>${escapeHtml(b.content)}</h2>\n`;
+          if (b.type === 'quote') html += `    <blockquote>\n      <p>"${escapeHtml(b.quote)}"</p>\n      <cite>— ${escapeHtml(b.attribution)}</cite>\n    </blockquote>\n`;
+          if (b.type === 'image') html += `    <figure>\n      <img src="${escapeHtml(b.url)}" alt="${escapeHtml(b.caption)}" />\n      <figcaption>${escapeHtml(b.caption)} (${escapeHtml(b.source)})</figcaption>\n    </figure>\n`;
+        });
+
+        html += `  </div>\n</article>`;
+        textarea.value = html;
+      } else {
+        const payload = {
+          metadata: {
+            title: heading,
+            deck: subheading,
+            summary: summary,
+            author: author,
+            dateline: dateline,
+            section: category,
+            status: status,
+            exportedAt: new Date().toISOString()
+          },
+          components: storyBlocks
+        };
+        textarea.value = JSON.stringify(payload, null, 2);
+      }
+    }
+
+    function copyExportContent() {
+      const textarea = document.getElementById('exportCodeOutput');
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        const notice = document.getElementById('exportCopyNotice');
+        notice.classList.remove('opacity-0');
+        setTimeout(() => notice.classList.add('opacity-0'), 2500);
+      } catch (err) {
+        showToast('Press Ctrl+C to copy');
+      }
+    }
+
+    function handlePublishAction() {
+      const heading = document.getElementById('metaHeading').value;
+      showToast(`Article "${heading.slice(0, 24)}..." ready for desk syndication!`);
+      document.getElementById('workflowStatus').value = 'ready';
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      toast.classList.remove('translate-y-12', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-12', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 2500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Initial boot
+    window.addEventListener('DOMContentLoaded', () => {
+      renderEditorBlocks();
+      renderLivePreview();
+    });
+  </script>
+</body>
+</html>

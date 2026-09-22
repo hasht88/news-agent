@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, field_validator
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 ALLOWED_LANGUAGES = {"urdu", "english", "arabic"}
 CANONICAL_LANGUAGES = {"urdu": "Urdu", "english": "English", "arabic": "Arabic"}
@@ -35,4 +35,28 @@ class AgentSettings(BaseModel):
         if "languages" in data and "target_languages" not in data:
             data["target_languages"] = data.pop("languages")
         super().__init__(**data)
+
+
+class StoryItem(BaseModel):
+    heading: str = ""
+    url: str = ""
+    subheading: str = ""
+    summary: str = ""
+    image: str = ""
+    content: str = ""
+    author: str = ""
+    date: str = ""
+    sitename: str = ""
+    source_language: str = ""
+    tags: List[str] = Field(default_factory=list)
+    blocks: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class StoryUpdateRequest(BaseModel):
+    index: int
+    story: StoryItem
+
+
+class StoryFetchRequest(BaseModel):
+    url: str
 
