@@ -108,25 +108,25 @@
           </button>
         </form>
 
-        <!-- Filter Button -->
-        <form method="post" action="/filter" class="inline">
-          <button 
-            type="submit"
-            class="{% if is_filtered %}bg-slate-200 hover:bg-slate-300 text-slate-700 border border-slate-300/80 shadow-2xs{% else %}bg-[#0F172A] hover:bg-[#1E293B] text-white shadow-sm{% endif %} active:scale-[0.98] font-medium text-xs sm:text-sm px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer"
-            title="{% if is_filtered %}Filtered articles by configured keywords{% else %}Filter news articles based on configured keywords{% endif %}"
-          >
-            <span>{% if is_filtered %}Filtered{% else %}Filter{% endif %}</span>
-          </button>
-        </form>
+        <!-- Frontend Filter Button -->
+        <button 
+          type="button"
+          id="mainFilterBtn"
+          onclick="toggleMainFilter()"
+          class="bg-[#0F172A] hover:bg-[#1E293B] text-white shadow-sm active:scale-[0.98] font-medium text-xs sm:text-sm px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer select-none"
+          title="Filter news articles based on configured keywords"
+        >
+          <span id="mainFilterBtnText">Filter</span>
+        </button>
 
-        {% if is_filtered %}
         <a 
-          href="/" 
-          class="text-xs font-medium text-slate-500 hover:text-slate-800 underline decoration-slate-300 hover:decoration-slate-600 px-1 py-1 transition"
+          href="javascript:void(0)" 
+          id="resetFilterLink"
+          onclick="resetMainFilter()"
+          class="hidden text-xs font-medium text-slate-500 hover:text-slate-800 underline decoration-slate-300 hover:decoration-slate-600 px-1 py-1 transition select-none"
         >
           Reset Filter
         </a>
-        {% endif %}
       </div>
 
       <!-- Right Side: Process Selected News Button -->
@@ -309,12 +309,12 @@
           data-tags="{{ (item.tags|join(',')|lower) if (item.tags and item.tags is iterable and item.tags is not string) else (item.tags|lower if item.tags else '') }}"
         >
           <!-- Tags Container (LTR) -->
-          <div class="flex flex-wrap items-center gap-1.5 w-[190px] min-w-[130px] shrink-0">
+          <div class="news-item-tags flex flex-wrap items-center gap-1.5 w-[190px] min-w-[130px] shrink-0">
             {% if item.tags %}
               {% if item.tags is string %}
                 <span 
                   onclick="event.stopPropagation(); selectTagDirectly('{{ item.tags }}')"
-                  class="inline-flex items-center px-2.5 py-1 rounded-full border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 text-[12px] font-medium text-slate-700 shadow-2xs transition-colors cursor-pointer"
+                  class="inline-flex items-center px-3 py-1 rounded-full border border-slate-200/90 bg-white hover:bg-slate-50 text-[12px] font-medium text-slate-600 shadow-2xs transition-colors cursor-pointer select-none"
                   title="Click to filter by tag '{{ item.tags }}'"
                 >
                   {{ item.tags }}
@@ -323,7 +323,7 @@
                 {% for tag in item.tags %}
                   <span 
                     onclick="event.stopPropagation(); selectTagDirectly('{{ tag }}')"
-                    class="inline-flex items-center px-2.5 py-1 rounded-full border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 text-[12px] font-medium text-slate-700 shadow-2xs transition-colors cursor-pointer"
+                    class="inline-flex items-center px-3 py-1 rounded-full border border-slate-200/90 bg-white hover:bg-slate-50 text-[12px] font-medium text-slate-600 shadow-2xs transition-colors cursor-pointer select-none"
                     title="Click to filter by tag '{{ tag }}'"
                   >
                     {{ tag }}
@@ -613,6 +613,55 @@
       renderFilterTags();
     }
 
+    // Toggle Main Filter button in top bar
+    let isMainFilterActive = false;
+
+    function toggleMainFilter() {
+      if (isMainFilterActive) {
+        resetMainFilter();
+      } else {
+        applyMainKeywordFilter();
+      }
+    }
+
+    function applyMainKeywordFilter() {
+      // Activate all defaultKeywords
+      if (defaultKeywords && defaultKeywords.length > 0) {
+        defaultKeywords.forEach(kw => {
+          const matchedTag = availableTags.find(t => t.toLowerCase() === kw.toLowerCase()) || kw;
+          activeTags.add(matchedTag);
+        });
+      }
+      isMainFilterActive = true;
+      updateFilterButtonUI();
+      renderFilterTags();
+    }
+
+    function resetMainFilter() {
+      activeTags.clear();
+      isMainFilterActive = false;
+      updateFilterButtonUI();
+      renderFilterTags();
+    }
+
+    function updateFilterButtonUI() {
+      const btn = document.getElementById("mainFilterBtn");
+      const text = document.getElementById("mainFilterBtnText");
+      const resetLink = document.getElementById("resetFilterLink");
+
+      if (!btn || !text) return;
+
+      if (isMainFilterActive || activeTags.size > 0) {
+        btn.className = "bg-slate-200 hover:bg-slate-300 text-slate-700 border border-slate-300/80 shadow-2xs active:scale-[0.98] font-medium text-xs sm:text-sm px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer select-none";
+        text.innerText = "Filtered";
+        if (resetLink) resetLink.classList.remove("hidden");
+      } else {
+        btn.className = "bg-[#0F172A] hover:bg-[#1E293B] text-white shadow-sm active:scale-[0.98] font-medium text-xs sm:text-sm px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer select-none";
+        text.innerText = "Filter";
+        if (resetLink) resetLink.classList.add("hidden");
+      }
+    }
+
     // Apply filtering to news list items
     function applyFilters() {
       const items = document.querySelectorAll(".news-item");
@@ -627,26 +676,49 @@
         }
       }
 
+      // Check all active search words / keywords to find in headline
+      const activeArr = Array.from(activeTags).map(t => t.trim()).filter(Boolean);
+      const allSearchKeywords = Array.from(new Set([
+        ...activeArr,
+        ...(defaultKeywords || [])
+      ])).map(k => k.trim()).filter(Boolean);
+
       if (activeTags.size === 0) {
         items.forEach(item => {
           item.style.display = "";
           visibleCount++;
+
+          // When no filters are active, restore tags container to whatever tags the item initially had
+          updateItemTagPills(item, []);
         });
+        isMainFilterActive = false;
+        updateFilterButtonUI();
       } else {
-        const activeArr = Array.from(activeTags).map(t => t.toLowerCase().trim());
+        const activeLower = activeArr.map(t => t.toLowerCase());
+
         items.forEach(item => {
           const headline = item.getAttribute("data-headline") || "";
-          const tags = item.getAttribute("data-tags") || "";
-          const combined = (headline + " " + tags).toLowerCase();
+          const tagsAttr = item.getAttribute("data-tags") || "";
+          const combined = (headline + " " + tagsAttr).toLowerCase();
 
-          const matches = activeArr.some(tag => combined.includes(tag));
-          if (matches) {
+          // Find which active filter tags match
+          const matchedActive = activeArr.filter(t => combined.includes(t.toLowerCase()));
+
+          if (matchedActive.length > 0) {
             item.style.display = "";
             visibleCount++;
+
+            // Also check if any additional configured keywords appear in this headline
+            const matchedKeywords = allSearchKeywords.filter(k => headline.includes(k.toLowerCase()));
+            const tagsToDisplay = dedupeTagsCaseInsensitive(matchedActive, matchedKeywords);
+            updateItemTagPills(item, tagsToDisplay);
           } else {
             item.style.display = "none";
           }
         });
+
+        isMainFilterActive = true;
+        updateFilterButtonUI();
       }
 
       // Update item count badge
@@ -668,6 +740,33 @@
           emptyState.classList.add("hidden");
         }
       }
+    }
+
+    // Helper: update or render tag pills in the news item row
+    function updateItemTagPills(item, tagsToDisplay) {
+      const container = item.querySelector(".news-item-tags");
+      if (!container) return;
+
+      if (!tagsToDisplay || tagsToDisplay.length === 0) {
+        // Fallback to data-tags if any
+        const initialTagsAttr = item.getAttribute("data-tags") || "";
+        const fallbackTags = initialTagsAttr.split(",").map(t => t.trim()).filter(Boolean);
+        if (fallbackTags.length === 0) {
+          container.innerHTML = "";
+          return;
+        }
+        tagsToDisplay = fallbackTags;
+      }
+
+      container.innerHTML = tagsToDisplay.map(tag => `
+        <span 
+          onclick="event.stopPropagation(); selectTagDirectly('${escapeHtml(tag)}')"
+          class="inline-flex items-center px-3 py-1 rounded-full border border-slate-200/90 bg-white hover:bg-slate-50 text-[12px] font-medium text-slate-600 shadow-2xs transition-colors cursor-pointer select-none"
+          title="Click to filter by tag '${escapeHtml(tag)}'"
+        >
+          ${escapeHtml(tag)}
+        </span>
+      `).join("");
     }
 
     // Initialize tags on load
