@@ -1,7 +1,7 @@
 import re, os, json
 import httpx
 from bs4 import BeautifulSoup, SoupStrainer
-from fastapi import FastAPI, Request, HTTPException, Form, status
+from fastapi import FastAPI, Request, HTTPException, Form, status, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
@@ -307,27 +307,8 @@ async def filter_news(request: Request):
         }
     )
 
-def save_selected_news(items: list[dict]):
+def save_raw_selected_news(items: list[dict]):
     ensure_data_dir()
-    clean_items = []
-    for it in items:
-        clean_it = {
-            "heading": it.get("headline", ""),
-            "url": it.get("url", ""),
-            "subheading": "",
-            "summary": "",
-            "image": "",
-            "content": "",
-            "author": "",
-            "date": "",
-            "sitename":"",
-            "source_language":"",
-            "blocks": it.get("blocks", []),
-        }
-        if "tags" in it and it.get("tags"):
-            clean_it["tags"] = it["tags"]
-        clean_items.append(clean_it)
-    clean_items = detect_lang(clean_items)
     if os.environ.get("VERCEL"):
         if not is_blob_configured():
             print("Notice: Vercel Blob token not configured. Skipping upload to blob.")
@@ -335,19 +316,42 @@ def save_selected_news(items: list[dict]):
             try:
                 client.put(
                     "data/selected_news.json",
-                    json.dumps(clean_items, ensure_ascii=False),
+                    json.dumps(items, ensure_ascii=False),
                     access="private",
                     content_type="application/json",
                     overwrite=True
                 )
             except Exception as e:
-                print(f"Error saving selected news to blob: {e}")
+                print(f"Error saving raw selected news to blob: {e}")
     else:
         try:
             with open(SELECTED_NEWS_FILE, "w", encoding="utf-8") as f:
-                json.dump(clean_items, f, indent=2, ensure_ascii=False)
+                json.dump(items, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            print(f"Error saving selected news to file: {e}")
+            print(f"Error saving raw selected news to file: {e}")
+
+def save_selected_news(items: list[dict]):
+    ensure_data_dir()
+    clean_items = []
+    for it in items:
+        clean_it = {
+            "heading": it.get("heading") or it.get("headline", ""),
+            "url": it.get("url", ""),
+            "subheading": it.get("subheading", ""),
+            "summary": it.get("summary", ""),
+            "image": it.get("image", ""),
+            "content": it.get("content", ""),
+            "author": it.get("author", ""),
+            "date": it.get("date", ""),
+            "sitename": it.get("sitename", ""),
+            "source_language": it.get("source_language", ""),
+            "blocks": it.get("blocks", []),
+        }
+        if "tags" in it and it.get("tags"):
+            clean_it["tags"] = it["tags"]
+        clean_items.append(clean_it)
+    clean_items = detect_lang(clean_items)
+    save_raw_selected_news(clean_items)
 
 def load_selected_news():
     if os.environ.get("VERCEL"):
@@ -382,6 +386,7 @@ async def story_page(request: Request):
 @app.post("/process", response_class=RedirectResponse)
 async def process_news(
     request: Request,
+    background_tasks: BackgroundTasks,
     selected_news: list[int] = Form(default=[])):
     news = load_news_data()
     selected_items = []
@@ -391,6 +396,7 @@ async def process_news(
             selected_items.append(matched)
 
     save_selected_news(selected_items)
+    background_tasks.add_task(background_fetch_all_stories)
     return RedirectResponse(url="/story", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.get("/api/settings", response_model=AgentSettings)
@@ -462,11 +468,16 @@ async def update_story_item(payload: StoryUpdateRequest):
 
     return {"status": "success", "message": "Story saved successfully!", "story": updated_dict}
 
-@app.post("/api/story/fetch")
-async def fetch_story_from_url(payload: StoryFetchRequest):
-    url = (payload.url or "").strip()
+story_fetch_state = {
+    "status": "idle",
+    "total": 0,
+    "completed": 0
+}
+
+def scrape_article_from_url(url: str) -> dict:
+    url = (url or "").strip()
     if not url or not url.startswith("http"):
-        raise HTTPException(status_code=400, detail="A valid HTTP/HTTPS URL is required.")
+        return {}
 
     html_content = ""
     # Try httpx first
@@ -485,86 +496,162 @@ async def fetch_story_from_url(payload: StoryFetchRequest):
                 html_content = resp.text
         except Exception as e:
             print(f"curl_cffi fetch failed for {url}: {e}")
-            raise HTTPException(status_code=502, detail=f"Failed to fetch content from URL: {e}")
 
     if not html_content:
-        raise HTTPException(status_code=502, detail="Unable to retrieve HTML content from URL.")
+        return {}
 
     soup = BeautifulSoup(html_content, "html.parser")
-    # text_md = extract(resp.text, output_format="markdown")
-    text_json = extract(resp.text, output_format="json")
-    meta = extract_metadata(resp.text)
-    body = json.loads(text_json)['text']
-    # 1. Headline / Heading
+    try:
+        text_json = extract(html_content, output_format="json")
+        body = json.loads(text_json)['text'] if text_json else ""
+    except Exception as e:
+        print(f"trafilatura extract failed for {url}: {e}")
+        body = ""
+
+    try:
+        meta = extract_metadata(html_content)
+    except Exception as e:
+        print(f"trafilatura extract_metadata failed for {url}: {e}")
+        meta = None
+
     og_title = soup.find("meta", property="og:title")
     tw_title = soup.find("meta", attrs={"name": "twitter:title"})
     h1 = soup.find("h1")
     title_tag = soup.find("title")
-    heading = (og_title.get("content") if og_title else None) or \
+    heading = (meta.title if meta and meta.title else None) or \
+              (og_title.get("content") if og_title else None) or \
               (tw_title.get("content") if tw_title else None) or \
               (h1.get_text(strip=True) if h1 else None) or \
               (title_tag.get_text(strip=True) if title_tag else "")
 
-    # 2. Subheading / Meta description
     og_desc = soup.find("meta", property="og:description")
     meta_desc = soup.find("meta", attrs={"name": "description"})
     tw_desc = soup.find("meta", attrs={"name": "twitter:description"})
-    subheading = (og_desc.get("content") if og_desc else None) or \
-              (meta_desc.get("content") if meta_desc else None) or \
-              (tw_desc.get("content") if tw_desc else "")
+    subheading = (meta.description if meta and meta.description else None) or \
+                 (og_desc.get("content") if og_desc else None) or \
+                 (meta_desc.get("content") if meta_desc else None) or \
+                 (tw_desc.get("content") if tw_desc else "")
 
-    # 4. Lead Image
     og_img = soup.find("meta", property="og:image")
     tw_img = soup.find("meta", attrs={"name": "twitter:image"})
-    image = (og_img.get("content") if og_img else None) or \
+    image = (meta.image if meta and meta.image else None) or \
+            (og_img.get("content") if og_img else None) or \
             (tw_img.get("content") if tw_img else "")
     if image:
         image = urljoin(url, image)
 
-    # 5. Author
     meta_author = soup.find("meta", attrs={"name": "author"}) or soup.find("meta", property="article:author")
     author_el = soup.find(class_=lambda c: c and any(k in c.lower() for k in ["author__name", "byline", "author-name", "author"]))
-    author = (meta_author.get("content") if meta_author and meta_author.get("content") else None) or \
+    author = (meta.author if meta and meta.author else None) or \
+             (meta_author.get("content") if meta_author and meta_author.get("content") else None) or \
              (author_el.get_text(strip=True) if author_el else "")
 
-    # 6. Publish Date
     date_meta = soup.find("meta", property="article:published_time") or \
                 soup.find("meta", attrs={"name": "publish-date"}) or \
                 soup.find("meta", attrs={"name": "pubdate"})
     time_el = soup.find("time")
-    date_str = (date_meta.get("content") if date_meta and date_meta.get("content") else None) or \
+    date_str = (meta.date if meta and meta.date else None) or \
+               (date_meta.get("content") if date_meta and date_meta.get("content") else None) or \
                (time_el.get_text(strip=True) if time_el else "")
 
-    # 7. Article Body Paragraphs
-
-    # # If summary is still empty, use first paragraph as lead summary
-    # if not subheading and paragraphs:
-    #     subheading = paragraphs[0]
-    #
-    # # Generate initial modular blocks if paragraphs exist
-    # modular_blocks = []
-    # for idx, p_text in enumerate(paragraphs[:5]):
-    #     modular_blocks.append({
-    #         "id": f"block_fetched_{idx + 1}",
-    #         "type": "paragraph",
-    #         "content": p_text
-    #     })
-
-    # Site name
     og_site = soup.find("meta", property="og:site_name")
-    sitename = og_site.get("content") if og_site else ""
+    sitename = (meta.sitename if meta and meta.sitename else None) or \
+               (og_site.get("content") if og_site else "")
+
+    return {
+        "heading": heading,
+        "subheading": subheading,
+        "summary": "",
+        "content": body,
+        "author": author,
+        "date": date_str,
+        "image": image,
+        "sitename": sitename,
+        "blocks": []
+    }
+
+def background_fetch_all_stories():
+    global story_fetch_state
+    try:
+        stories = load_selected_news()
+        if not stories:
+            story_fetch_state = {"status": "completed", "total": 0, "completed": 0}
+            return
+
+        story_fetch_state = {
+            "status": "fetching",
+            "total": len(stories),
+            "completed": 0
+        }
+
+        for idx, story in enumerate(stories):
+            url = story.get("url", "").strip()
+            if url and url.startswith("http"):
+                try:
+                    fetched = scrape_article_from_url(url)
+                    if fetched:
+                        if fetched.get("heading"):
+                            story["heading"] = fetched["heading"]
+                        if fetched.get("subheading"):
+                            story["subheading"] = fetched["subheading"]
+                        if fetched.get("content"):
+                            story["content"] = fetched["content"]
+                        if fetched.get("author"):
+                            story["author"] = fetched["author"]
+                        if fetched.get("date"):
+                            story["date"] = fetched["date"]
+                        if fetched.get("sitename"):
+                            story["sitename"] = fetched["sitename"]
+                        if fetched.get("image"):
+                            story["image"] = fetched["image"]
+
+                        img_url = (story.get("image") or "").strip()
+                        if img_url:
+                            if not isinstance(story.get("blocks"), list):
+                                story["blocks"] = []
+                            existing_img = next((b for b in story["blocks"] if isinstance(b, dict) and b.get("type") == "image" and b.get("url") == img_url), None)
+                            if not existing_img:
+                                import time
+                                story["blocks"].append({
+                                    "id": f"block_{int(time.time() * 1000)}_{idx}",
+                                    "type": "image",
+                                    "url": img_url,
+                                    "caption": story.get("subheading") or story.get("heading") or "News story visual coverage",
+                                    "source": story.get("sitename") or story.get("author") or "Source Wire / Photo"
+                                })
+                except Exception as e:
+                    print(f"Error background fetching story {idx} ({url}): {e}")
+
+            story_fetch_state["completed"] = idx + 1
+            # Save progress as each story is fetched
+            save_raw_selected_news(stories)
+
+        story_fetch_state["status"] = "completed"
+    except Exception as outer_e:
+        print(f"Fatal error in background_fetch_all_stories: {outer_e}")
+        story_fetch_state["status"] = "completed"
+
+@app.post("/api/story/fetch")
+async def fetch_story_from_url(payload: StoryFetchRequest):
+    url = (payload.url or "").strip()
+    if not url or not url.startswith("http"):
+        raise HTTPException(status_code=400, detail="A valid HTTP/HTTPS URL is required.")
+
+    fetched = scrape_article_from_url(url)
+    if not fetched:
+        raise HTTPException(status_code=502, detail="Unable to retrieve or parse article content from URL.")
 
     return {
         "status": "success",
-        "data": {
-            "heading": meta.title,
-            "subheading": meta.description,
-            "summary": "",
-            "content": body,
-            "author": meta.author,
-            "date": meta.date,
-            "image": meta.image,
-            "sitename": meta.sitename,
-            "blocks": ""
-        }
+        "data": fetched
+    }
+
+@app.get("/api/story/status")
+async def get_story_fetch_status():
+    stories = load_selected_news()
+    return {
+        "status": story_fetch_state.get("status", "idle"),
+        "total": story_fetch_state.get("total", len(stories)),
+        "completed": story_fetch_state.get("completed", 0),
+        "stories": stories
     }
