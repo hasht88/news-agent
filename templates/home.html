@@ -215,6 +215,11 @@
   <!-- MAIN CONTENT CONTAINER -->
   <main class="max-w-5xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
 
+    <!-- 5-STAGE PIPELINE PROGRESS STEPPER -->
+    {% with current_step=1 %}
+      {% include "components/stepper.html" %}
+    {% endwith %}
+
     <!-- CRAWL REPORT FEEDBACK BANNER (COLLAPSIBLE DROPDOWN) -->
     {% if crawl_stats %}
     <details class="group mb-6 bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden transition-all">

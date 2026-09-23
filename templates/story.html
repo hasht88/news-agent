@@ -97,6 +97,11 @@
   <!-- MAIN CONTENT CONTAINER -->
   <main class="max-w-5xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
 
+    <!-- 5-STAGE PIPELINE PROGRESS STEPPER (ACTIVE ON STEP 3: CREATE) -->
+    {% with current_step=3 %}
+      {% include "components/stepper.html" %}
+    {% endwith %}
+
     <!-- CARD CONTAINER -->
     <div class="bg-white rounded-[28px] border border-slate-200/90 shadow-[0_4px_30px_rgba(0,0,0,0.03)] p-6 sm:p-10 transition-all">
 
