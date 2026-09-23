@@ -491,11 +491,10 @@ async def fetch_story_from_url(payload: StoryFetchRequest):
         raise HTTPException(status_code=502, detail="Unable to retrieve HTML content from URL.")
 
     soup = BeautifulSoup(html_content, "html.parser")
-    text_md = extract(resp.text, output_format="markdown")
-    # text_json = extract(resp.text, output_format="json")
+    # text_md = extract(resp.text, output_format="markdown")
+    text_json = extract(resp.text, output_format="json")
     meta = extract_metadata(resp.text)
-    # body = json.loads(text_json)['text']
-    body =text_md
+    body = json.loads(text_json)['text']
     # 1. Headline / Heading
     og_title = soup.find("meta", property="og:title")
     tw_title = soup.find("meta", attrs={"name": "twitter:title"})
