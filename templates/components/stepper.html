@@ -8,10 +8,13 @@
 <div id="pipelineStepperCard" class="w-full bg-white rounded-xl border border-stone-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.02)] px-4 py-3.5 sm:px-6 sm:py-4 mb-6 transition-all">
   <!-- Stepper Top Bar Track & Nodes -->
   <div class="relative w-full">
-    <!-- Progress Line Track (Background) -->
-    <div class="absolute top-4 sm:top-4.5 left-0 right-0 h-[2px] bg-stone-200 -translate-y-1/2 z-0 mx-6 sm:mx-10"></div>
-    <!-- Dynamic Active Progress Bar Fill -->
-    <div id="stepperProgressLine" class="progress-bar-fill absolute top-4 sm:top-4.5 left-0 h-[2px] bg-stone-900 -translate-y-1/2 z-0 mx-6 sm:mx-10" style="width: {{ ((active_step - 1) / 4) * 100 }}%;"></div>
+    <!-- Progress Line Track Container (Strictly bounded between Node 1 center at 10% and Node 5 center at 90%) -->
+    <div class="absolute top-4 sm:top-4.5 left-[10%] right-[10%] h-[2px] -translate-y-1/2 z-0 pointer-events-none">
+      <!-- Background Track -->
+      <div class="w-full h-full bg-stone-200"></div>
+      <!-- Dynamic Active Progress Bar Fill -->
+      <div id="stepperProgressLine" class="progress-bar-fill absolute top-0 left-0 h-full bg-stone-900 transition-all duration-300" style="width: {{ ((active_step - 1) / 4) * 100 }}%;"></div>
+    </div>
 
     <!-- Stepper Nodes Grid (5 Steps) -->
     <div class="relative z-10 grid grid-cols-5 gap-1 sm:gap-2">
