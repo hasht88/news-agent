@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-100/70">
+<html lang="en" class="h-full bg-[#FBFBFA]">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Selected Stories - News Curation Agent</title>
+  <title>Story Studio — News Curation Agent</title>
 
-  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <!-- Google Fonts: Plus Jakarta Sans, Newsreader, Noto Naskh Arabic & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -17,12 +17,15 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-            mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', 'monospace']
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            serif: ['Newsreader', 'Georgia', 'serif'],
+            arabic: ['"Noto Naskh Arabic"', 'Tahoma', 'serif'],
+            mono: ['"JetBrains Mono"', 'Menlo', 'Monaco', 'monospace']
           },
           colors: {
-            brandDark: '#0F172A',
-            brandBlue: '#2563EB'
+            paper: '#FBFBFA',
+            ink: '#121316',
+            inkMuted: '#54575E'
           }
         }
       }
@@ -31,36 +34,48 @@
 
   <style>
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-editorial {
+      font-family: 'Newsreader', Georgia, serif;
+    }
+    .font-rtl-arabic {
+      font-family: 'Noto Naskh Arabic', 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
     }
   </style>
 </head>
-<body class="min-h-full bg-[#F5F6F8] text-slate-800 antialiased">
+<body class="min-h-full bg-[#FBFBFA] text-[#121316] antialiased selection:bg-stone-200">
 
   <!-- TOP NAVIGATION BAR (STICKY AT TOP) -->
-  <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-    <div class="max-w-5xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
+  <nav class="sticky top-0 z-50 bg-[#FBFBFA]/95 backdrop-blur-md border-b border-stone-200">
+    <div class="max-w-5xl mx-auto px-4 sm:px-8 h-14 flex items-center justify-between">
       <!-- Brand / Logo -->
-      <a href="/" class="flex items-center gap-2.5 text-slate-900 hover:text-slate-700 transition-colors">
-        <div class="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xs">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <a href="/" class="flex items-center gap-2.5 text-stone-900 hover:text-stone-700 transition-colors">
+        <div class="w-7 h-7 rounded-lg bg-stone-900 flex items-center justify-center text-white shadow-2xs">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/>
             <path d="M18 14h-8"/>
             <path d="M15 18h-5"/>
             <path d="M10 6h8v4h-8V6Z"/>
           </svg>
         </div>
-        <span class="font-bold text-lg tracking-tight">News Curation Agent</span>
+        <div class="flex items-baseline gap-2">
+          <span class="font-bold text-base tracking-tight text-stone-900">News Curation Agent</span>
+          <span class="hidden sm:inline-block text-[11px] font-mono font-medium text-stone-400 uppercase tracking-widest">Story Studio</span>
+        </div>
       </a>
 
       <!-- Navigation Tabs -->
-      <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-2">
         <a 
           href="/" 
-          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200/80 transition-all shadow-2xs"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/80 transition shadow-2xs"
           title="Headlines"
         >
-          <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="w-3.5 h-3.5 text-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
             <polyline points="9 22 9 12 15 12 15 22"/>
           </svg>
@@ -69,10 +84,10 @@
 
         <a 
           href="/story" 
-          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold bg-slate-900 text-white shadow-xs"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-900 text-white shadow-2xs"
           title="Story Workspace"
         >
-          <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
             <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
           </svg>
@@ -81,10 +96,10 @@
 
         <a 
           href="/setting" 
-          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200/80 transition-all shadow-2xs"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/80 transition shadow-2xs"
           title="Configuration Settings"
         >
-          <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="w-3.5 h-3.5 text-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
             <circle cx="12" cy="12" r="3"/>
           </svg>
@@ -95,7 +110,7 @@
   </nav>
 
   <!-- MAIN CONTENT CONTAINER -->
-  <main class="max-w-5xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
+  <main class="max-w-5xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
 
     <!-- 5-STAGE PIPELINE PROGRESS STEPPER (ACTIVE ON STEP 3: CREATE) -->
     {% with current_step=3 %}
@@ -103,15 +118,15 @@
     {% endwith %}
 
     <!-- CARD CONTAINER -->
-    <div class="bg-white rounded-[28px] border border-slate-200/90 shadow-[0_4px_30px_rgba(0,0,0,0.03)] p-6 sm:p-10 transition-all">
+    <div class="bg-white rounded-xl border border-stone-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.02)] p-5 sm:p-8 transition-all">
 
       {% if stories and stories|length > 0 %}
       <!-- STORY SELECT DROPDOWN SECTION -->
-      <section class="mb-8">
-        <div class="flex items-center justify-between gap-3 mb-2.5">
-          <label for="storySelect" class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider">STORY</label>
-          <div id="fetchStatusIndicator" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 shadow-2xs transition-all">
-            <svg id="fetchStatusSpinner" class="w-3 h-3 text-indigo-600 animate-spin" viewBox="0 0 24 24" fill="none">
+      <section class="mb-6">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <label for="storySelect" class="block text-xs font-mono font-bold text-stone-500 uppercase tracking-wider">Active Story Dispatch</label>
+          <div id="fetchStatusIndicator" class="hidden items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono bg-stone-100 text-stone-600 border border-stone-200 transition-all">
+            <svg id="fetchStatusSpinner" class="w-3 h-3 text-stone-800 animate-spin" viewBox="0 0 24 24" fill="none">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
@@ -123,7 +138,7 @@
           <select 
             id="storySelect" 
             onchange="handleStoryChange(this.value)"
-            class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3.5 pr-10 text-sm font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 shadow-[0_1px_2px_rgba(0,0,0,0.02)] cursor-pointer transition appearance-none"
+            class="w-full bg-stone-50/70 border border-stone-200 rounded-lg px-3.5 py-2.5 pr-10 text-xs sm:text-sm font-medium text-stone-900 focus:outline-none focus:border-stone-500 focus:bg-white shadow-2xs cursor-pointer transition appearance-none"
           >
             {% for s in stories %}
             {% set story_title = s.heading or s.headline or 'Untitled Story' %}
@@ -132,7 +147,7 @@
             </option>
             {% endfor %}
           </select>
-          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-stone-400">
             <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
             </svg>
@@ -141,15 +156,15 @@
       </section>
 
       <!-- MODE SWITCHER TABS: EDITOR vs LIVE PREVIEW -->
-      <div class="flex items-center justify-between mb-6 pb-2 border-b border-slate-200/80">
-        <div class="inline-flex p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 shadow-2xs">
+      <div class="flex items-center justify-between mb-5 pb-2.5 border-b border-stone-200">
+        <div class="inline-flex p-0.5 bg-stone-100 rounded-lg border border-stone-200">
           <button 
             type="button" 
             id="tabBtnEditor" 
             onclick="switchStoryTab('editor')"
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 shadow-xs cursor-pointer"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition bg-white text-stone-900 shadow-2xs cursor-pointer"
           >
-            <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-3.5 h-3.5 text-stone-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
             </svg>
             <span>Story Editor</span>
@@ -158,34 +173,31 @@
             type="button" 
             id="tabBtnPreview" 
             onclick="switchStoryTab('preview')"
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-800 cursor-pointer"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition text-stone-500 hover:text-stone-900 cursor-pointer"
           >
-            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-3.5 h-3.5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
             </svg>
-            <span>Live Reader Preview</span>
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Reader Experience</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
           </button>
         </div>
 
-        <div class="hidden sm:flex items-center gap-2 text-[11px] font-mono text-slate-400">
+        <div class="hidden sm:flex items-center gap-1.5 text-xs font-mono text-stone-400">
           <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
           <span>Live Synchronized</span>
         </div>
       </div>
 
       <!-- SELECTED STORY EDITORIAL WORKFLOW SECTION -->
-      <section id="storyDetailsCard" class="bg-slate-50/70 rounded-2xl border border-slate-200/90 p-5 sm:p-7 transition-all">
+      <section id="storyDetailsCard" class="bg-stone-50/50 rounded-xl border border-stone-200/90 p-5 sm:p-6 transition-all">
         
         <!-- Header bar inside editor -->
-        <div class="flex flex-wrap items-center justify-between gap-3 pb-4 mb-5 border-b border-slate-200/80">
-          <div class="flex items-center gap-2.5">
-            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-              <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
-              </svg>
-              Story Editor
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 mb-4 border-b border-stone-200">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-mono font-bold text-stone-600 uppercase tracking-wider flex items-center gap-1.5">
+              Draft Composition
             </span>
           </div>
 
@@ -196,11 +208,11 @@
               href="#" 
               target="_blank" 
               rel="noopener noreferrer" 
-              class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-lg border border-slate-200 shadow-2xs transition"
+              class="inline-flex items-center justify-center gap-1 px-2.5 py-1 bg-white hover:bg-stone-100 text-stone-700 text-xs font-mono rounded border border-stone-200 shadow-2xs transition"
               title="Open source URL in new tab"
             >
               <span>Source URL</span>
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
                 <polyline points="15 3 21 3 21 9"/>
                 <line x1="10" y1="14" x2="21" y2="3"/>
@@ -211,13 +223,13 @@
               id="saveStoryBtn"
               type="button"
               onclick="saveCurrentStory()"
-              class="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-xs transition"
+              class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1 bg-stone-900 hover:bg-stone-800 text-white text-xs font-medium rounded shadow-2xs transition"
             >
-              <svg id="saveSpinner" class="w-3.5 h-3.5 animate-spin hidden text-white" viewBox="0 0 24 24" fill="none">
+              <svg id="saveSpinner" class="w-3 h-3 animate-spin hidden text-white" viewBox="0 0 24 24" fill="none">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <svg id="saveIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg id="saveIcon" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
               </svg>
               <span id="saveBtnText">Save Story</span>
@@ -226,168 +238,150 @@
         </div>
 
         <!-- Tags / Keywords if available -->
-        <div id="storyTagsWrapper" class="mb-5 hidden">
-          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Matched Keywords</div>
+        <div id="storyTagsWrapper" class="mb-4 hidden">
+          <div class="text-[10px] font-mono uppercase tracking-wider text-stone-400 mb-1.5">Focus Keywords</div>
           <div id="storyTagsContainer" class="flex flex-wrap items-center gap-1.5"></div>
         </div>
 
         <!-- Meta Details: Author, Date / Location, Image URL -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           <div>
-            <label for="storyAuthor" class="block text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-1">Author</label>
+            <label for="storyAuthor" class="block text-xs font-mono font-medium text-stone-500 uppercase tracking-wider mb-1">Author / Byline</label>
             <input 
               type="text" 
               id="storyAuthor" 
               oninput="handleFieldInput()"
-              class="w-full text-xs rounded-lg border border-slate-200 bg-white p-2.5 text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition" 
+              class="w-full text-xs rounded-lg border border-stone-200 bg-white p-2 text-stone-800 focus:border-stone-500 outline-none transition" 
               placeholder="e.g. Staff Reporter"
             >
           </div>
           <div>
-            <label for="storyDate" class="block text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-1">Publish Date</label>
+            <label for="storyDate" class="block text-xs font-mono font-medium text-stone-500 uppercase tracking-wider mb-1">Publish Dateline</label>
             <input 
               type="text" 
               id="storyDate" 
               oninput="handleFieldInput()"
-              class="w-full text-xs rounded-lg border border-slate-200 bg-white p-2.5 text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition" 
-              placeholder="e.g. Islamabad — Today"
+              class="w-full text-xs rounded-lg border border-stone-200 bg-white p-2 text-stone-800 focus:border-stone-500 outline-none transition" 
+              placeholder="e.g. Islamabad — Wire Desk"
             >
           </div>
         </div>
 
         <!-- Headline / Heading -->
-        <div class="mb-5">
-          <div class="flex justify-between items-center mb-1.5">
-            <label for="storyHeadlineInput" class="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <span class="w-1.5 h-3 bg-blue-600 rounded-xs"></span>
-              Heading
+        <div class="mb-4">
+          <div class="flex justify-between items-center mb-1">
+            <label for="storyHeadlineInput" class="text-xs font-mono font-bold text-stone-700 uppercase tracking-wider flex items-center gap-1.5">
+              <span class="w-1.5 h-3 bg-stone-900 rounded-xs"></span>
+              Editorial Headline
             </label>
-            <span id="headlineCharCount" class="text-[10px] font-mono text-slate-400">0 chars</span>
+            <span id="headlineCharCount" class="text-[10px] font-mono text-stone-400">0 chars</span>
           </div>
           <textarea 
             id="storyHeadlineInput" 
             rows="2" 
             oninput="handleFieldInput(); updateCharCounts(); autoExpandTextarea(this);"
-            class="w-full text-base font-semibold text-slate-900 rounded-xl border border-slate-200 bg-white p-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition leading-snug overflow-hidden resize-y"
-            placeholder="Enter a punchy, accurate news headline..."
+            class="w-full font-editorial text-lg sm:text-xl font-semibold text-stone-950 rounded-lg border border-stone-200 bg-white p-3 focus:border-stone-500 outline-none transition leading-snug overflow-hidden resize-y"
+            placeholder="Enter an accurate, punchy headline..."
           ></textarea>
         </div>
 
         <!-- Subheading / Deck -->
-        <div class="mb-5">
-          <div class="flex justify-between items-center mb-1.5">
-            <label for="storySubheading" class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Subheading</label>
-            <span id="subheadingCharCount" class="text-[10px] font-mono text-slate-400">0 chars</span>
+        <div class="mb-4">
+          <div class="flex justify-between items-center mb-1">
+            <label for="storySubheading" class="text-xs font-mono font-medium text-stone-600 uppercase tracking-wider">Subheading / Deck</label>
+            <span id="subheadingCharCount" class="text-[10px] font-mono text-stone-400">0 chars</span>
           </div>
           <textarea 
             id="storySubheading" 
             rows="2" 
             oninput="handleFieldInput(); updateCharCounts(); autoExpandTextarea(this);"
-            class="w-full text-xs sm:text-sm text-slate-700 rounded-xl border border-slate-200 bg-white p-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition leading-relaxed overflow-hidden resize-y"
-            placeholder="Elaborate on the headline with context or key impact..."
+            class="w-full font-editorial italic text-xs sm:text-sm text-stone-700 rounded-lg border border-stone-200 bg-white p-2.5 focus:border-stone-500 outline-none transition leading-relaxed overflow-hidden resize-y"
+            placeholder="Elaborate on the headline with critical background context..."
           ></textarea>
         </div>
 
         <!-- Executive Summary / Key Takeaways Box -->
-        <div id="storySummaryWrapper" class="mb-5 hidden">
-          <div class="flex justify-between items-center mb-1.5">
-            <label for="storySummary" class="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm.75 11.25a.75.75 0 01-1.5 0v-5a.75.75 0 011.5 0v5zm-.75-7.5a.75.75 0 110-1.5.75.75 0 010 1.5z"></path>
-              </svg>
-              Summary
+        <div id="storySummaryWrapper" class="mb-4 hidden">
+          <div class="flex justify-between items-center mb-1">
+            <label for="storySummary" class="text-xs font-mono font-medium text-stone-600 uppercase tracking-wider flex items-center gap-1.5">
+              Executive Summary
             </label>
-            <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-medium">Front-page callout</span>
+            <span class="text-[10px] font-mono bg-stone-200/80 text-stone-800 px-1.5 py-0.5 rounded">Wire Briefing</span>
           </div>
           <textarea 
             id="storySummary" 
             rows="3" 
             oninput="handleFieldInput(); autoExpandTextarea(this);"
-            class="w-full text-xs sm:text-sm bg-amber-50/40 text-slate-800 rounded-xl border border-amber-200/80 p-3 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 focus:bg-white outline-none transition leading-relaxed overflow-hidden resize-y"
-            placeholder="Summarize the core scoop in 2-3 essential sentences..."
+            class="w-full text-xs sm:text-sm bg-stone-100/60 text-stone-900 rounded-lg border border-stone-300/80 p-3 focus:border-stone-500 focus:bg-white outline-none transition leading-relaxed overflow-hidden resize-y"
+            placeholder="Key takeaways in 2-3 concise sentences..."
           ></textarea>
         </div>
 
         <!-- Main Story Content / Article Body -->
-        <div class="mb-6">
-          <div class="flex justify-between items-center mb-1.5">
-            <label for="storyContent" class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Body</label>
-            <span id="contentWordCount" class="text-[10px] font-mono text-slate-400">0 words</span>
+        <div class="mb-5">
+          <div class="flex justify-between items-center mb-1">
+            <label for="storyContent" class="text-xs font-mono font-medium text-stone-600 uppercase tracking-wider">Article Narrative Body</label>
+            <span id="contentWordCount" class="text-[10px] font-mono text-stone-400">0 words</span>
           </div>
           <textarea 
             id="storyContent" 
             rows="6" 
             oninput="handleFieldInput(); updateCharCounts(); autoExpandTextarea(this);"
-            class="w-full text-xs sm:text-sm text-slate-800 rounded-xl border border-slate-200 bg-white p-3.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition leading-relaxed font-sans overflow-hidden resize-y min-h-[160px]"
-            placeholder="Write or edit the full story body, journalistic analysis, or narrative here..."
+            class="w-full text-xs sm:text-sm text-stone-900 rounded-lg border border-stone-200 bg-white p-3.5 focus:border-stone-500 outline-none transition leading-relaxed overflow-hidden resize-y min-h-[160px]"
+            placeholder="Draft the article narrative, quotes, or journalistic dispatch..."
           ></textarea>
         </div>
 
-        <!-- MODULAR STORY COMPONENTS SECTION (Screenshot & Workflow Inspired) -->
-        <div class="pt-6 border-t border-slate-200/80 mb-6">
-          <div class="flex items-center justify-between mb-4">
+        <!-- MODULAR STORY COMPONENTS SECTION -->
+        <div class="pt-5 border-t border-stone-200 mb-5">
+          <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-2">
-              <span class="flex h-2 w-2 rounded-full bg-emerald-600"></span>
-              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Story Components (Modular Blocks)</h3>
+              <span class="flex h-1.5 w-1.5 rounded-full bg-stone-900"></span>
+              <h3 class="text-xs font-mono font-bold text-stone-700 uppercase tracking-wider">Modular Blocks</h3>
             </div>
-            <span id="blocksCountBadge" class="text-[11px] text-slate-400 font-mono">0 components</span>
+            <span id="blocksCountBadge" class="text-[10px] text-stone-400 font-mono">0 blocks</span>
           </div>
 
           <!-- Dynamic Blocks Container -->
-          <div id="storyBlocksContainer" class="space-y-4 mb-6">
+          <div id="storyBlocksContainer" class="space-y-3 mb-5">
             <!-- Injected via renderStoryBlocks() -->
           </div>
 
           <!-- Component Action Tool Palette -->
-          <div class="pt-5 border-t border-slate-200">
-            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center">
-              <svg class="w-3.5 h-3.5 mr-1.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-              </svg>
-              Insert Story Component:
+          <div class="pt-4 border-t border-stone-200">
+            <p class="text-[10px] font-mono uppercase tracking-wider text-stone-400 mb-2.5">
+              + Insert Editorial Block:
             </p>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button 
                 type="button" 
                 onclick="addStoryBlock('paragraph')" 
-                class="flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50/40 text-xs font-medium text-slate-700 shadow-2xs transition group cursor-pointer"
+                class="flex items-center justify-center p-2 rounded-lg border border-stone-200 bg-white hover:border-stone-400 hover:bg-stone-50 text-xs font-mono text-stone-700 transition cursor-pointer"
               >
-                <svg class="w-4 h-4 mr-1.5 text-slate-400 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
-                </svg>
                 + Paragraph
               </button>
 
               <button 
                 type="button" 
                 onclick="addStoryBlock('heading')" 
-                class="flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50/40 text-xs font-medium text-slate-700 shadow-2xs transition group cursor-pointer"
+                class="flex items-center justify-center p-2 rounded-lg border border-stone-200 bg-white hover:border-stone-400 hover:bg-stone-50 text-xs font-mono text-stone-700 transition cursor-pointer"
               >
-                <svg class="w-4 h-4 mr-1.5 text-slate-400 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
-                </svg>
-                + Sub-heading
+                + Sub-header
               </button>
 
               <button 
                 type="button" 
                 onclick="addStoryBlock('image')" 
-                class="flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50/40 text-xs font-medium text-slate-700 shadow-2xs transition group cursor-pointer"
+                class="flex items-center justify-center p-2 rounded-lg border border-stone-200 bg-white hover:border-stone-400 hover:bg-stone-50 text-xs font-mono text-stone-700 transition cursor-pointer"
               >
-                <svg class="w-4 h-4 mr-1.5 text-slate-400 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-                + Image Media
+                + Image Asset
               </button>
 
               <button 
                 type="button" 
                 onclick="addStoryBlock('quote')" 
-                class="flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50/40 text-xs font-medium text-slate-700 shadow-2xs transition group cursor-pointer"
+                class="flex items-center justify-center p-2 rounded-lg border border-stone-200 bg-white hover:border-stone-400 hover:bg-stone-50 text-xs font-mono text-stone-700 transition cursor-pointer"
               >
-                <svg class="w-4 h-4 mr-1.5 text-slate-400 group-hover:text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
-                </svg>
                 + Pullquote
               </button>
             </div>
@@ -395,12 +389,12 @@
         </div>
 
         <!-- Status / Feedback Toast inside card footer -->
-        <div class="flex items-center justify-between pt-3 border-t border-slate-200/60 text-xs">
-          <div id="saveStatusMessage" class="opacity-0 transition-opacity duration-300 font-medium"></div>
+        <div class="flex items-center justify-between pt-3 border-t border-stone-200 text-xs">
+          <div id="saveStatusMessage" class="opacity-0 transition-opacity duration-300 font-mono text-xs"></div>
           <button
             type="button"
             onclick="saveCurrentStory()"
-            class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition shadow-xs cursor-pointer"
+            class="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-lg text-xs font-medium transition shadow-2xs cursor-pointer"
           >
             Update Story
           </button>
@@ -410,18 +404,18 @@
       <!-- END OF EDITORIAL WORKFLOW SECTION -->
 
       <!-- LIVE READER EXPERIENCE PREVIEW PANEL -->
-      <section id="storyPreviewCard" class="hidden bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden transition-all">
+      <section id="storyPreviewCard" class="hidden bg-white rounded-xl border border-stone-200 shadow-2xs overflow-hidden transition-all">
         <!-- Live Preview Chrome Header -->
-        <div class="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+        <div class="px-4 py-3 bg-stone-900 text-white flex items-center justify-between border-b border-stone-800">
           <div class="flex items-center space-x-2">
-            <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
-            <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
-            <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
-            <span class="text-xs font-mono text-slate-400 ml-2">Reader Experience Preview</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-stone-600 inline-block"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-stone-500 inline-block"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+            <span class="text-xs font-mono text-stone-400 ml-2">Publication Preview</span>
           </div>
-          <div class="flex items-center space-x-3 text-xs">
-            <span id="pvLangBadge" class="hidden bg-indigo-900/80 text-indigo-300 px-2 py-0.5 rounded border border-indigo-700 text-[10px] uppercase font-bold tracking-wider">LANG: EN</span>
-            <span class="bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800 text-[10px] uppercase font-bold tracking-wider flex items-center gap-1">
+          <div class="flex items-center space-x-2 text-xs">
+            <span id="pvLangBadge" class="hidden bg-stone-800 text-stone-300 px-2 py-0.5 rounded border border-stone-700 text-[10px] font-mono uppercase tracking-wider">LANG: EN</span>
+            <span class="bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800 text-[10px] font-mono uppercase tracking-wider flex items-center gap-1">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
               Live Sync
             </span>
@@ -429,63 +423,60 @@
         </div>
 
         <!-- Rendered Article Surface -->
-        <div id="pvReaderSurface" class="p-6 sm:p-10 bg-white font-serif max-w-3xl mx-auto">
+        <div id="pvReaderSurface" class="p-6 sm:p-10 bg-white font-editorial max-w-3xl mx-auto">
           
           <!-- Category / Sitename Pill -->
-          <div id="pvCategory" class="font-sans text-[11px] font-bold tracking-widest text-blue-700 uppercase mb-3">
-            NEWS WIRE
+          <div id="pvCategory" class="font-mono text-[11px] font-medium tracking-widest text-stone-500 uppercase mb-3">
+            WIRE DISPATCH
           </div>
 
           <!-- Live Headline -->
-          <h1 id="pvHeadline" class="text-2xl sm:text-3xl lg:text-4xl font-serif font-bold text-slate-950 leading-tight mb-3 tracking-tight">
+          <h1 id="pvHeadline" class="text-2xl sm:text-3xl lg:text-4xl font-editorial font-bold text-stone-950 leading-tight mb-3 tracking-tight">
             Untitled Story
           </h1>
 
           <!-- Live Subheading -->
-          <p id="pvSubheading" class="text-base sm:text-lg text-slate-600 font-serif italic leading-relaxed mb-5 pb-5 border-b border-slate-200">
+          <p id="pvSubheading" class="text-base sm:text-lg text-stone-600 font-editorial italic leading-relaxed mb-5 pb-4 border-b border-stone-200">
           </p>
 
           <!-- Byline and Dateline info -->
-          <div class="font-sans flex items-center justify-between text-xs text-slate-500 mb-6 pb-2">
+          <div class="font-sans flex items-center justify-between text-xs text-stone-500 mb-6 pb-2">
             <div>
-              By <span id="pvAuthor" class="font-bold text-slate-800">Staff Reporter</span>
+              By <span id="pvAuthor" class="font-semibold text-stone-900">Staff Reporter</span>
             </div>
-            <div id="pvDateline" class="text-slate-400 font-medium">
+            <div id="pvDateline" class="font-mono text-stone-400">
               Today
             </div>
           </div>
 
           <!-- Lead Image if present -->
           <div id="pvLeadImageWrapper" class="mb-6 hidden">
-            <div class="w-full max-h-[500px] bg-slate-950/90 rounded-2xl overflow-hidden border border-slate-200 flex items-center justify-center p-1">
-              <img id="pvLeadImage" src="" alt="Lead story image" class="w-full h-auto max-h-[490px] object-contain rounded-xl" />
+            <div class="w-full max-h-[500px] bg-stone-950/90 rounded-lg overflow-hidden border border-stone-200 flex items-center justify-center p-1">
+              <img id="pvLeadImage" src="" alt="Lead story image" class="w-full h-auto max-h-[490px] object-contain rounded" />
             </div>
           </div>
 
           <!-- Live Summary/TLDR Box -->
-          <div id="pvSummaryWrapper" class="font-sans mb-6 bg-amber-50/60 border-l-4 border-amber-500 p-4 rounded-r-xl hidden">
-            <div class="text-[11px] font-bold text-amber-900 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm.75 11.25a.75.75 0 01-1.5 0v-5a.75.75 0 011.5 0v5zm-.75-7.5a.75.75 0 110-1.5.75.75 0 010 1.5z"></path>
-              </svg>
-              Key Takeaways
+          <div id="pvSummaryWrapper" class="mb-6 bg-stone-100/70 border-l-2 border-stone-800 p-4 rounded-r-lg hidden">
+            <div class="text-[10px] font-mono font-bold text-stone-900 uppercase tracking-wider mb-1">
+              Key Findings & Context
             </div>
-            <p id="pvSummary" class="text-xs sm:text-sm text-slate-800 leading-relaxed font-sans">
+            <p id="pvSummary" class="text-xs sm:text-sm text-stone-800 leading-relaxed font-sans">
             </p>
           </div>
 
           <!-- Main Article Body -->
-          <div id="pvContent" class="mb-8 text-slate-800 font-sans leading-relaxed text-sm sm:text-base whitespace-pre-line">
+          <div id="pvContent" class="mb-8 text-stone-900 font-editorial leading-relaxed text-base sm:text-lg whitespace-pre-line">
           </div>
 
           <!-- Dynamic Modular Blocks Output -->
-          <div id="pvBodyBlocks" class="space-y-6 pt-4 border-t border-slate-100">
+          <div id="pvBodyBlocks" class="space-y-6 pt-4 border-t border-stone-100">
           </div>
 
           <!-- News Footer Tag -->
-          <div class="mt-12 pt-6 border-t border-slate-200 font-sans text-xs text-slate-400 flex justify-between items-center">
-            <span>© 2026 Global Wire Editorial Syndicate</span>
-            <span class="text-slate-300 font-mono text-[11px]">End of Story</span>
+          <div class="mt-12 pt-5 border-t border-stone-200 font-mono text-[11px] text-stone-400 flex justify-between items-center">
+            <span>News Curation Agent &bull; Wire Syndicate</span>
+            <span class="text-stone-300">End of Dispatch</span>
           </div>
 
         </div>
@@ -493,19 +484,19 @@
       {% else %}
       <!-- EMPTY STATE -->
       <div class="py-12 text-center">
-        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center mb-4">
-          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <div class="w-10 h-10 rounded-lg bg-stone-100 text-stone-400 mx-auto flex items-center justify-center mb-3">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
             <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
           </svg>
         </div>
-        <h3 class="text-base font-semibold text-slate-800">No stories selected yet</h3>
-        <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Go back to the headlines page, select articles, and click "Proceed" to curate stories here.</p>
+        <h3 class="text-sm font-semibold text-stone-900">No stories selected in current queue</h3>
+        <p class="text-xs text-stone-500 mt-1 max-w-sm mx-auto">Browse the wire headlines feed, select dispatches of interest, and click "Curate Stories".</p>
         <a 
           href="/" 
-          class="inline-flex items-center gap-2 mt-5 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl transition shadow-xs"
+          class="inline-flex items-center gap-1.5 mt-4 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-medium rounded-lg transition shadow-2xs"
         >
-          <span>Browse Headlines</span>
+          <span>Browse Wire Headlines</span>
           <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
           </svg>
@@ -752,31 +743,31 @@
           blocks.forEach((b, idx) => {
             if (b.type === "paragraph" && b.content && b.content.trim()) {
               const p = document.createElement("p");
-              p.className = "text-slate-800 leading-relaxed font-serif text-sm sm:text-base selection:bg-indigo-100";
+              p.className = "text-stone-900 leading-relaxed font-editorial text-base sm:text-lg mb-4";
               p.innerText = b.content;
               pvBodyBlocks.appendChild(p);
             } else if (b.type === "heading" && b.content && b.content.trim()) {
               const h2 = document.createElement("h2");
-              h2.className = "text-lg sm:text-xl font-bold font-serif text-slate-900 pt-3 pb-1 tracking-tight border-b border-slate-100";
+              h2.className = "text-xl sm:text-2xl font-bold font-editorial text-stone-950 pt-3 pb-1 tracking-tight border-b border-stone-200 mb-3";
               h2.innerText = b.content;
               pvBodyBlocks.appendChild(h2);
             } else if (b.type === "quote" && b.quote && b.quote.trim()) {
               const bq = document.createElement("blockquote");
-              bq.className = "my-5 pl-4 border-l-4 border-emerald-500 italic text-slate-700 font-serif text-sm sm:text-base bg-emerald-50/30 py-2.5 pr-3 rounded-r-xl";
+              bq.className = "my-6 pl-4 border-l-2 border-stone-800 italic text-stone-800 font-editorial text-lg sm:text-xl bg-stone-50/50 py-2 pr-3 rounded-r";
               bq.innerHTML = `
-                <p class="mb-1 text-slate-800">"${escapeHtml(b.quote)}"</p>
-                ${b.attribution ? `<cite class="not-italic text-[11px] font-sans font-bold text-emerald-800 uppercase tracking-wider block">— ${escapeHtml(b.attribution)}</cite>` : ''}
+                <p class="mb-1 text-stone-900 leading-snug">"${escapeHtml(b.quote)}"</p>
+                ${b.attribution ? `<cite class="not-italic text-xs font-mono font-medium text-stone-500 uppercase tracking-wider block mt-1">— ${escapeHtml(b.attribution)}</cite>` : ''}
               `;
               pvBodyBlocks.appendChild(bq);
             } else if (b.type === "image" && b.url && b.url.trim()) {
               const figure = document.createElement("figure");
-              figure.className = "my-6 overflow-hidden rounded-2xl bg-slate-950/90 border border-slate-200 p-1";
+              figure.className = "my-6 overflow-hidden rounded-lg bg-stone-950/90 border border-stone-200 p-1";
               figure.innerHTML = `
-                <img src="${escapeHtml(b.url)}" alt="${escapeHtml(b.caption || '')}" onerror="this.src='https://placehold.co/800x400/e2e8f0/475569?text=Image+Unavailable'" class="w-full h-auto max-h-[500px] object-contain rounded-xl" />
+                <img src="${escapeHtml(b.url)}" alt="${escapeHtml(b.caption || '')}" onerror="this.src='https://placehold.co/800x400/e2e8f0/475569?text=Image+Unavailable'" class="w-full h-auto max-h-[500px] object-contain rounded" />
                 ${(b.caption || b.source) ? `
-                  <figcaption class="p-3 bg-white border-t border-slate-100 font-sans text-xs text-slate-600 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 rounded-b-xl">
+                  <figcaption class="p-2.5 bg-white border-t border-stone-100 font-sans text-xs text-stone-600 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 rounded-b">
                     <span>${escapeHtml(b.caption || '')}</span>
-                    <span class="text-[10px] text-slate-400 font-medium">${escapeHtml(b.source || '')}</span>
+                    <span class="text-[10px] font-mono text-stone-400">${escapeHtml(b.source || '')}</span>
                   </figcaption>
                 ` : ''}
               `;
