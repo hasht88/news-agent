@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Configuration — News Curation Agent</title>
+  <title>Configuration — Media Agent</title>
   
   <!-- Google Fonts: Plus Jakarta Sans, Newsreader & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -59,7 +59,7 @@
           </svg>
         </div>
         <div class="flex items-baseline gap-2">
-          <span class="font-bold text-base tracking-tight text-stone-900">News Curation Agent</span>
+          <span class="font-bold text-base tracking-tight text-stone-900">Media Agent</span>
           <span class="hidden sm:inline-block text-[11px] font-mono font-medium text-stone-400 uppercase tracking-widest">Settings</span>
         </div>
       </a>
@@ -101,13 +101,13 @@
       
       <!-- CARD HEADER -->
       <header class="mb-8 pb-4 border-b border-stone-200/70">
-        <h1 class="font-editorial text-2xl sm:text-[28px] font-semibold text-stone-900 tracking-tight leading-tight">Feed & Language Architecture</h1>
+        <h1 class="font-editorial text-2xl sm:text-[28px] font-semibold text-stone-900 tracking-tight leading-tight">Configuration</h1>
         <p class="text-xs text-stone-500 mt-1 font-normal">Configure news source feeds, multi-lingual translation targets, and editorial curation tags</p>
       </header>
 
     <!-- SOURCE LANGUAGES SECTION -->
     <section class="mb-8">
-      <label for="sourceLanguageSelect" class="block text-xs font-mono font-bold text-stone-500 uppercase tracking-wider mb-2.5">Source Wire Languages</label>
+      <label for="sourceLanguageSelect" class="block text-xs font-mono font-bold text-stone-500 uppercase tracking-wider mb-2.5">Sources Languages</label>
       
       <!-- Select Source Language Dropdown Bar -->
       <div class="flex items-center justify-between border border-stone-200 rounded-lg px-3.5 py-2 bg-white focus-within:border-stone-500 focus-within:ring-2 focus-within:ring-stone-200 transition shadow-2xs">
@@ -195,14 +195,14 @@
 
     <!-- URLS SECTION -->
     <section class="mb-8">
-      <label for="urlInput" class="block text-xs font-mono font-bold text-stone-500 uppercase tracking-wider mb-2.5">Feed Sources & RSS Feeds</label>
+      <label for="urlInput" class="block text-xs font-mono font-bold text-stone-500 uppercase tracking-wider mb-2.5">Sources URLs</label>
       
       <!-- Add URL Input Bar -->
       <div class="flex items-center justify-between border border-stone-200 rounded-lg px-3.5 py-2 bg-white focus-within:border-stone-500 focus-within:ring-2 focus-within:ring-stone-200 transition shadow-2xs">
         <input 
           type="text" 
           id="urlInput" 
-          placeholder="https://feeds.bbci.co.uk/news/rss.xml" 
+          placeholder="https://www.aljazeera.com"
           class="w-full bg-transparent text-xs sm:text-sm text-stone-800 placeholder-stone-400 focus:outline-none pr-3 font-mono-code"
           onkeydown="if(event.key === 'Enter') handleAddUrl()"
         />
@@ -237,14 +237,14 @@
 
     <!-- KEYWORDS SECTION -->
     <section class="mb-9">
-      <label for="keywordInput" class="block text-xs font-mono font-bold text-stone-500 uppercase tracking-wider mb-2.5">Default Keywords & Focus Topics</label>
+      <label for="keywordInput" class="block text-xs font-mono font-bold text-stone-500 uppercase tracking-wider mb-2.5">Keywords</label>
       
       <!-- Add Keyword Input Bar -->
       <div class="flex items-center justify-between border border-stone-200 rounded-lg px-3.5 py-2 bg-white focus-within:border-stone-500 focus-within:ring-2 focus-within:ring-stone-200 transition shadow-2xs">
         <input 
           type="text" 
           id="keywordInput" 
-          placeholder="e.g. Economy, Technology, Diplomacy..." 
+          placeholder="e.g. Houthis, Iran ..."
           class="w-full bg-transparent text-xs sm:text-sm text-stone-800 placeholder-stone-400 focus:outline-none pr-3"
           onkeydown="if(event.key === 'Enter') handleAddKeyword()"
         />
@@ -261,7 +261,7 @@
       <div id="keywordsContainer" class="mt-3 flex flex-wrap gap-2 items-center">
         {% for kw in settings.keywords %}
         <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-stone-50 border border-stone-200 text-xs font-mono text-stone-700 transition" data-keyword="{{ kw }}">
-          <span>#{{ kw }}</span>
+          <span>{{ kw }}</span>
           <button 
             type="button" 
             onclick="removeKeyword(this)" 
@@ -529,7 +529,7 @@
       const container = document.getElementById("keywordsContainer");
       container.innerHTML = keywords.map(kw => `
         <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-stone-50 border border-stone-200 text-xs font-mono text-stone-700 transition" data-keyword="${escapeHtml(kw)}">
-          <span>#${escapeHtml(kw)}</span>
+          <span>${escapeHtml(kw)}</span>
           <button 
             type="button" 
             onclick="removeKeyword(this)" 

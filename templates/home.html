@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>News Curation Agent — Wire Desk</title>
+  <title>Media Agent</title>
 
   <!-- Google Fonts: Plus Jakarta Sans, Newsreader, Noto Naskh Arabic & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -64,8 +64,7 @@
           </svg>
         </div>
         <div class="flex items-baseline gap-2">
-          <span class="font-bold text-base tracking-tight text-stone-900">News Curation Agent</span>
-          <span class="hidden sm:inline-block text-[11px] font-mono font-medium text-stone-400 uppercase tracking-widest">Wire Desk</span>
+          <span class="font-bold text-base tracking-tight text-stone-900">Media Agent</span>
         </div>
       </a>
 
@@ -117,7 +116,7 @@
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span id="crawlBtnText">{% if crawl_stats %}Crawled{% else %}Crawl Sources{% endif %}</span>
+            <span id="crawlBtnText">{% if crawl_stats %}Crawled{% else %}Crawl{% endif %}</span>
           </button>
         </form>
 
@@ -129,7 +128,7 @@
           class="bg-stone-900 hover:bg-stone-800 text-white shadow-2xs active:scale-[0.98] font-medium text-xs px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer select-none"
           title="Filter news articles based on configured keywords"
         >
-          <span id="mainFilterBtnText">Filter Active</span>
+          <span id="mainFilterBtnText">Filter</span>
         </button>
 
         <a 
@@ -164,7 +163,7 @@
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <span id="proceedBtnText">Curate Stories &rarr;</span>
+          <span id="proceedBtnText">Proceed</span>
         </button>
       </div>
 
@@ -298,7 +297,7 @@
     <!-- HEADER / HERO -->
     <header class="mb-5 flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 border-b border-stone-200/60 pb-3">
       <div>
-        <h1 class="font-editorial text-2xl sm:text-[28px] font-semibold text-stone-900 tracking-tight leading-tight">Incoming Wire Dispatches</h1>
+        <h1 class="font-editorial text-2xl sm:text-[28px] font-semibold text-stone-900 tracking-tight leading-tight">News Headlines</h1>
         <p class="text-xs text-stone-500 mt-0.5">Select news leads to curate, translate, or synthesize into editorial stories</p>
       </div>
       {% if news %}
@@ -329,7 +328,7 @@
                   class="inline-flex items-center px-2 py-0.5 rounded bg-stone-50 hover:bg-stone-100 text-[11px] font-mono text-stone-600 border border-stone-200 transition cursor-pointer select-none"
                   title="Click to filter by '{{ item.tags }}'"
                 >
-                  #{{ item.tags }}
+                  {{ item.tags }}
                 </span>
               {% else %}
                 {% for tag in item.tags %}
@@ -338,7 +337,7 @@
                     class="inline-flex items-center px-2 py-0.5 rounded bg-stone-50 hover:bg-stone-100 text-[11px] font-mono text-stone-600 border border-stone-200 transition cursor-pointer select-none"
                     title="Click to filter by '{{ tag }}'"
                   >
-                    #{{ tag }}
+                    {{ tag }}
                   </span>
                 {% endfor %}
               {% endif %}
@@ -533,7 +532,7 @@
 
         // Tag label text (clickable to toggle selection)
         const textSpan = document.createElement("span");
-        textSpan.innerText = `#${tag}`;
+        textSpan.innerText = `${tag}`;
         textSpan.className = "cursor-pointer";
         textSpan.onclick = () => toggleTag(tag);
         chip.appendChild(textSpan);
@@ -671,7 +670,7 @@
         if (resetLink) resetLink.classList.remove("hidden");
       } else {
         btn.className = "bg-stone-900 hover:bg-stone-800 text-white shadow-2xs active:scale-[0.98] font-medium text-xs px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer select-none";
-        text.innerText = "Filter Active";
+        text.innerText = "Filter";
         if (resetLink) resetLink.classList.add("hidden");
       }
     }
@@ -778,7 +777,7 @@
           class="inline-flex items-center px-2 py-0.5 rounded bg-stone-50 hover:bg-stone-100 text-[11px] font-mono text-stone-600 border border-stone-200 transition cursor-pointer select-none"
           title="Click to filter by '${escapeHtml(tag)}'"
         >
-          #${escapeHtml(tag)}
+          ${escapeHtml(tag)}
         </span>
       `).join("");
     }
