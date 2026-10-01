@@ -396,7 +396,11 @@ async def process_news(
             selected_items.append(matched)
 
     save_selected_news(selected_items)
-    background_tasks.add_task(background_fetch_all_stories)
+    # Only run server-side background fetching in non-serverless environments.
+    # In Vercel serverless functions, background tasks freeze on redirect;
+    # the client-side progressive fetcher on /story handles fetching reliably.
+    if not os.environ.get("VERCEL"):
+        background_tasks.add_task(background_fetch_all_stories)
     return RedirectResponse(url="/story", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.get("/api/settings", response_model=AgentSettings)

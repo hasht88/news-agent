@@ -200,40 +200,59 @@
             </span>
           </div>
 
-          <!-- Action Buttons: Open source article & Save -->
-          <div class="flex items-center gap-2">
-            <a
-              id="storyOpenBtn" 
-              href="#" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              class="inline-flex items-center justify-center gap-1 px-2.5 py-1 bg-white hover:bg-stone-100 text-stone-700 text-xs font-mono rounded border border-stone-200 shadow-2xs transition"
-              title="Open source URL in new tab"
-            >
-              <span>Source URL</span>
-              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                <polyline points="15 3 21 3 21 9"/>
-                <line x1="10" y1="14" x2="21" y2="3"/>
-              </svg>
-            </a>
+            <!-- Action Buttons: Open source article, Fetch/Refresh content & Save -->
+            <div class="flex items-center gap-2">
+              <a
+                id="storyOpenBtn" 
+                href="#" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="inline-flex items-center justify-center gap-1 px-2.5 py-1 bg-white hover:bg-stone-100 text-stone-700 text-xs font-mono rounded border border-stone-200 shadow-2xs transition"
+                title="Open source URL in new tab"
+              >
+                <span>Source URL</span>
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/>
+                  <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </a>
 
-            <button
-              id="saveStoryBtn"
-              type="button"
-              onclick="saveCurrentStory()"
-              class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1 bg-stone-900 hover:bg-stone-800 text-white text-xs font-medium rounded shadow-2xs transition"
-            >
-              <svg id="saveSpinner" class="w-3 h-3 animate-spin hidden text-white" viewBox="0 0 24 24" fill="none">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <svg id="saveIcon" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              <span id="saveBtnText">Save Story</span>
-            </button>
-          </div>
+              <button
+                id="fetchArticleBtn"
+                type="button"
+                onclick="fetchCurrentStoryArticle()"
+                class="inline-flex items-center justify-center gap-1 px-2.5 py-1 bg-white hover:bg-stone-100 text-stone-700 text-xs font-mono rounded border border-stone-200 shadow-2xs transition cursor-pointer"
+                title="Fetch full article body & images from source URL"
+              >
+                <svg id="fetchArticleSpinner" class="w-3 h-3 animate-spin hidden text-stone-800" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <svg id="fetchArticleIcon" class="w-3 h-3 text-stone-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span id="fetchArticleBtnText">Fetch Content</span>
+              </button>
+
+              <button
+                id="saveStoryBtn"
+                type="button"
+                onclick="saveCurrentStory()"
+                class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1 bg-stone-900 hover:bg-stone-800 text-white text-xs font-medium rounded shadow-2xs transition"
+              >
+                <svg id="saveSpinner" class="w-3 h-3 animate-spin hidden text-white" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <svg id="saveIcon" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span id="saveBtnText">Save Story</span>
+              </button>
+            </div>
         </div>
 
         <!-- Tags / Keywords if available -->
@@ -1268,6 +1287,209 @@
         .replace(/'/g, "&#039;");
     }
 
+    // ==========================================
+    // CLIENT-SIDE PROGRESSIVE FETCH ENGINE
+    // ==========================================
+    let isProgressiveFetching = false;
+
+    function applyFetchedDataToStory(story, fetched, index) {
+      if (!story || !fetched) return false;
+      let modified = false;
+
+      if (fetched.heading && fetched.heading !== story.heading) {
+        story.heading = fetched.heading;
+        modified = true;
+      }
+      if (fetched.subheading && fetched.subheading !== story.subheading) {
+        story.subheading = fetched.subheading;
+        modified = true;
+      }
+      if (fetched.content && fetched.content !== story.content) {
+        story.content = fetched.content;
+        modified = true;
+      }
+      if (fetched.author && fetched.author !== story.author) {
+        story.author = fetched.author;
+        modified = true;
+      }
+      if (fetched.date && fetched.date !== story.date) {
+        story.date = fetched.date;
+        modified = true;
+      }
+      if (fetched.sitename && fetched.sitename !== story.sitename) {
+        story.sitename = fetched.sitename;
+        modified = true;
+      }
+      if (fetched.image && fetched.image !== story.image) {
+        story.image = fetched.image;
+        modified = true;
+      }
+
+      const imgUrl = (story.image || "").trim();
+      if (imgUrl) {
+        if (!Array.isArray(story.blocks)) story.blocks = [];
+        const existingImg = story.blocks.find(b => b && b.type === "image" && b.url === imgUrl);
+        if (!existingImg) {
+          story.blocks.append ? story.blocks.append : story.blocks.push({
+            id: `block_${Date.now()}_${index}`,
+            type: "image",
+            url: imgUrl,
+            caption: story.subheading || story.heading || "News story visual coverage",
+            source: story.sitename || story.author || "Source Wire / Photo"
+          });
+          modified = true;
+        }
+      }
+
+      return modified;
+    }
+
+    async function fetchCurrentStoryArticle() {
+      if (!stories || stories.length === 0 || currentStoryIndex < 0 || currentStoryIndex >= stories.length) return;
+      const story = stories[currentStoryIndex];
+      const url = (story.url || "").trim();
+
+      if (!url || !url.startsWith("http")) {
+        showSaveStatus("No valid source URL to fetch content from", true);
+        return;
+      }
+
+      const btn = document.getElementById("fetchArticleBtn");
+      const btnText = document.getElementById("fetchArticleBtnText");
+      const spinner = document.getElementById("fetchArticleSpinner");
+      const icon = document.getElementById("fetchArticleIcon");
+
+      if (btn) btn.disabled = true;
+      if (btnText) btnText.innerText = "Fetching...";
+      if (spinner) spinner.classList.remove("hidden");
+      if (icon) icon.classList.add("hidden");
+
+      try {
+        const resp = await fetch("/api/story/fetch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: url })
+        });
+
+        if (!resp.ok) {
+          const errData = await resp.json().catch(() => ({}));
+          throw new Error(errData.detail || "Unable to extract article content");
+        }
+
+        const res = await resp.json();
+        const fetched = res.data;
+
+        if (fetched) {
+          applyFetchedDataToStory(story, fetched, currentStoryIndex);
+          renderStoryDetails(story);
+
+          // Update dropdown title
+          const selectEl = document.getElementById("storySelect");
+          if (selectEl && selectEl.options[currentStoryIndex]) {
+            const title = story.heading || story.headline || "Untitled Story";
+            selectEl.options[currentStoryIndex].text = `${currentStoryIndex + 1}. ${title.slice(0, 90)}${title.length > 90 ? "..." : ""}`;
+          }
+
+          // Persist to storage
+          await fetch("/api/story/update", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              index: currentStoryIndex,
+              story: story
+            })
+          });
+
+          showSaveStatus("Article content fetched and saved!");
+        }
+      } catch (err) {
+        showSaveStatus(err.message || "Failed to fetch article", true);
+      } finally {
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.innerText = "Fetch Content";
+        if (spinner) spinner.classList.add("hidden");
+        if (icon) icon.classList.remove("hidden");
+      }
+    }
+
+    async function progressiveFetchAllStories() {
+      if (!stories || stories.length === 0 || isProgressiveFetching) return;
+
+      // Identify stories that have URLs but empty content
+      const unfetchedIndices = [];
+      stories.forEach((s, idx) => {
+        const hasContent = (s.content || "").trim().length > 0;
+        const hasUrl = (s.url || "").trim().startsWith("http");
+        if (!hasContent && hasUrl) {
+          unfetchedIndices.push(idx);
+        }
+      });
+
+      if (unfetchedIndices.length === 0) {
+        return;
+      }
+
+      isProgressiveFetching = true;
+      const totalToFetch = unfetchedIndices.length;
+      let completedCount = 0;
+
+      setFetchIndicator("fetching", completedCount, totalToFetch);
+
+      for (const idx of unfetchedIndices) {
+        const story = stories[idx];
+        const url = (story.url || "").trim();
+
+        if (url && url.startsWith("http")) {
+          try {
+            const resp = await fetch("/api/story/fetch", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ url: url })
+            });
+
+            if (resp.ok) {
+              const res = await resp.json();
+              const fetched = res.data;
+              if (fetched) {
+                const wasCurrent = (idx === currentStoryIndex);
+                applyFetchedDataToStory(story, fetched, idx);
+
+                // Update dropdown title
+                const selectEl = document.getElementById("storySelect");
+                if (selectEl && selectEl.options[idx]) {
+                  const title = story.heading || story.headline || "Untitled Story";
+                  selectEl.options[idx].text = `${idx + 1}. ${title.slice(0, 90)}${title.length > 90 ? "..." : ""}`;
+                }
+
+                // If currently viewed and user is not actively typing, re-render
+                if (wasCurrent && !isUserActivelyTyping) {
+                  renderStoryDetails(story);
+                }
+
+                // Save to blob storage
+                await fetch("/api/story/update", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    index: idx,
+                    story: story
+                  })
+                });
+              }
+            }
+          } catch (e) {
+            console.warn(`Progressive fetch failed for story ${idx}:`, e);
+          }
+        }
+
+        completedCount++;
+        setFetchIndicator("fetching", completedCount, totalToFetch);
+      }
+
+      setFetchIndicator("completed", totalToFetch, totalToFetch);
+      isProgressiveFetching = false;
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       if (stories && stories.length > 0) {
         renderStoryDetails(stories[0]);
@@ -1285,8 +1507,8 @@
         }
       });
 
-      // Start polling status immediately on load
-      pollFetchStatus();
+      // Start client-side progressive scraping
+      progressiveFetchAllStories();
     });
   </script>
 </body>
