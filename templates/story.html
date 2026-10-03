@@ -45,6 +45,42 @@
     .font-mono-code {
       font-family: 'JetBrains Mono', monospace;
     }
+    /* LLM Chat Panel */
+    #llmChatPanel {
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #llmChatPanel.open {
+      transform: translateX(0);
+    }
+    .chat-msg-user {
+      background: #f5f5f4;
+      border: 1px solid #e7e5e4;
+    }
+    .chat-msg-assistant {
+      background: #fafaf9;
+      border: 1px solid #e7e5e4;
+    }
+    .chat-field-preview {
+      background: #f5f5f4;
+      border: 1px solid #d6d3d1;
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      margin-top: 0.25rem;
+      font-size: 0.75rem;
+      line-height: 1.5;
+      max-height: 120px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .chat-apply-btn {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
   </style>
 </head>
 <body class="min-h-full bg-[#FBFBFA] text-[#121316] antialiased selection:bg-stone-200">
@@ -235,6 +271,19 @@
                   <line x1="12" y1="15" x2="12" y2="3"/>
                 </svg>
                 <span id="fetchArticleBtnText">Fetch Content</span>
+              </button>
+
+              <button
+                id="llmChatToggleBtn"
+                type="button"
+                onclick="toggleChatPanel()"
+                class="inline-flex items-center justify-center gap-1 px-2.5 py-1 bg-white hover:bg-stone-100 text-stone-700 text-xs font-mono rounded border border-stone-200 shadow-2xs transition cursor-pointer"
+                title="Open AI Story Transform chat"
+              >
+                <svg class="w-3 h-3 text-stone-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span id="llmChatToggleBtnText">AI Transform</span>
               </button>
 
               <button
@@ -1510,6 +1559,308 @@
       // Start client-side progressive scraping
       progressiveFetchAllStories();
     });
+  </script>
+
+  <!-- LLM CHAT SIDE PANEL -->
+  <div id="llmChatPanel" class="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-[#FBFBFA] border-l border-stone-200 shadow-xl z-[60] flex flex-col">
+    <!-- Chat Panel Header -->
+    <div class="flex items-center justify-between px-4 py-3 border-b border-stone-200 bg-white shrink-0">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-md bg-stone-900 flex items-center justify-center">
+          <svg class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
+        <div>
+          <span class="text-xs font-bold text-stone-900">AI Story Transform</span>
+          <span class="text-[10px] font-mono text-stone-400 ml-1.5">Gemini</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button type="button" onclick="clearCurrentChat()" class="p-1.5 rounded-md hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition" title="Clear chat history">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+          </svg>
+        </button>
+        <button type="button" onclick="toggleChatPanel()" class="p-1.5 rounded-md hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition" title="Close panel">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Chat Messages Area -->
+    <div id="chatMessagesContainer" class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div class="text-center py-6">
+        <div class="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center mx-auto mb-3">
+          <svg class="w-5 h-5 text-stone-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
+        <p class="text-xs font-medium text-stone-700">Transform this story with AI</p>
+        <p class="text-[11px] text-stone-400 mt-1 max-w-[260px] mx-auto leading-relaxed">Describe how you want to transform the heading, subheading, and body — translate, rewrite, shorten, change tone, etc.</p>
+      </div>
+    </div>
+
+    <!-- Chat Input Area -->
+    <div class="shrink-0 border-t border-stone-200 bg-white px-3 py-3">
+      <div class="flex items-end gap-2">
+        <textarea id="chatInput" rows="1" placeholder="e.g. Translate to Urdu..." onkeydown="handleChatKeydown(event)" oninput="autoChatResize(this)" class="flex-1 text-xs rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-400 focus:bg-white resize-none overflow-hidden transition max-h-[100px]"></textarea>
+        <button id="chatSendBtn" type="button" onclick="sendChatMessage()" class="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-stone-900 hover:bg-stone-800 text-white transition shadow-2xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" title="Send message">
+          <svg id="chatSendIcon" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          <svg id="chatSendSpinner" class="w-3.5 h-3.5 animate-spin hidden" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        </button>
+      </div>
+      <div id="chatErrorMsg" class="hidden mt-1.5 text-[11px] text-rose-600 font-medium"></div>
+    </div>
+  </div>
+
+  <!-- Chat Panel Overlay (for mobile) -->
+  <div id="llmChatOverlay" class="fixed inset-0 bg-stone-900/30 z-[55] hidden" onclick="toggleChatPanel()"></div>
+
+  <script>
+    // ==========================================
+    // LLM CHAT PANEL ENGINE
+    // ==========================================
+    let chatPanelOpen = false;
+    const chatHistories = {};
+
+    function getChatHistory() {
+      if (!chatHistories[currentStoryIndex]) {
+        chatHistories[currentStoryIndex] = [];
+      }
+      return chatHistories[currentStoryIndex];
+    }
+
+    function toggleChatPanel() {
+      chatPanelOpen = !chatPanelOpen;
+      const panel = document.getElementById("llmChatPanel");
+      const overlay = document.getElementById("llmChatOverlay");
+      const toggleBtn = document.getElementById("llmChatToggleBtn");
+
+      if (chatPanelOpen) {
+        panel.classList.add("open");
+        overlay.classList.remove("hidden");
+        if (toggleBtn) {
+          toggleBtn.classList.remove("bg-white", "text-stone-700");
+          toggleBtn.classList.add("bg-stone-900", "text-white");
+        }
+        renderChatMessages();
+        setTimeout(() => { document.getElementById("chatInput")?.focus(); }, 350);
+      } else {
+        panel.classList.remove("open");
+        overlay.classList.add("hidden");
+        if (toggleBtn) {
+          toggleBtn.classList.remove("bg-stone-900", "text-white");
+          toggleBtn.classList.add("bg-white", "text-stone-700");
+        }
+      }
+    }
+
+    function clearCurrentChat() {
+      chatHistories[currentStoryIndex] = [];
+      renderChatMessages();
+    }
+
+    function renderChatMessages() {
+      const container = document.getElementById("chatMessagesContainer");
+      if (!container) return;
+      const history = getChatHistory();
+
+      if (history.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6">
+            <div class="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center mx-auto mb-3">
+              <svg class="w-5 h-5 text-stone-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <p class="text-xs font-medium text-stone-700">Transform this story with AI</p>
+            <p class="text-[11px] text-stone-400 mt-1 max-w-[260px] mx-auto leading-relaxed">Describe how you want to transform the heading, subheading, and body — translate, rewrite, shorten, change tone, etc.</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = history.map((msg, idx) => {
+        if (msg.role === "user") {
+          return `<div class="chat-msg-user rounded-lg px-3 py-2.5">
+            <div class="flex items-center gap-1.5 mb-1"><span class="text-[10px] font-mono font-bold text-stone-500 uppercase tracking-wider">You</span></div>
+            <p class="text-xs text-stone-800 leading-relaxed whitespace-pre-wrap">${escapeHtml(msg.content)}</p>
+          </div>`;
+        }
+
+        // Assistant message
+        let innerHtml = "";
+        if (msg.error) {
+          innerHtml = `<p class="text-xs text-rose-600 mt-1">${escapeHtml(msg.error)}</p>`;
+        } else if (msg.transformed) {
+          const t = msg.transformed;
+          const applied = msg.applied || {};
+          const allApplied = applied.heading && applied.subheading && applied.body;
+          innerHtml = `<div class="mt-2 space-y-2">
+            <div>
+              <div class="flex items-center justify-between"><span class="text-[10px] font-mono font-bold text-stone-500 uppercase tracking-wider">Heading</span>
+              <button onclick="applyTransformField(${idx},'heading')" class="chat-apply-btn ${applied.heading ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-50'}">${applied.heading ? '✓ Applied' : 'Apply'}</button></div>
+              <div class="chat-field-preview font-editorial">${escapeHtml(t.heading)}</div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between"><span class="text-[10px] font-mono font-bold text-stone-500 uppercase tracking-wider">Subheading</span>
+              <button onclick="applyTransformField(${idx},'subheading')" class="chat-apply-btn ${applied.subheading ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-50'}">${applied.subheading ? '✓ Applied' : 'Apply'}</button></div>
+              <div class="chat-field-preview font-editorial italic">${escapeHtml(t.subheading)}</div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between"><span class="text-[10px] font-mono font-bold text-stone-500 uppercase tracking-wider">Body</span>
+              <button onclick="applyTransformField(${idx},'body')" class="chat-apply-btn ${applied.body ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-50'}">${applied.body ? '✓ Applied' : 'Apply'}</button></div>
+              <div class="chat-field-preview">${escapeHtml(t.body).substring(0, 500)}${t.body.length > 500 ? '...' : ''}</div>
+            </div>
+            <button onclick="applyAllTransformFields(${idx})" class="w-full mt-1 text-xs font-medium py-1.5 rounded-lg border transition cursor-pointer ${allApplied ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-stone-900 text-white border-stone-900 hover:bg-stone-800'}">${allApplied ? '✓ All Fields Applied' : 'Apply All Fields'}</button>
+          </div>`;
+        }
+
+        return `<div class="chat-msg-assistant rounded-lg px-3 py-2.5">
+          <div class="flex items-center gap-1.5 mb-1"><span class="text-[10px] font-mono font-bold text-stone-500 uppercase tracking-wider">AI</span><span class="text-[9px] font-mono text-stone-300">Gemini</span></div>
+          ${innerHtml}
+        </div>`;
+      }).join("");
+
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function applyTransformField(msgIdx, field) {
+      const history = getChatHistory();
+      const msg = history[msgIdx];
+      if (!msg || !msg.transformed) return;
+      const value = msg.transformed[field];
+      if (value === undefined) return;
+      const story = stories[currentStoryIndex];
+      if (!story) return;
+
+      const fieldMap = {
+        heading:    { prop: "heading",    inputId: "storyHeadlineInput" },
+        subheading: { prop: "subheading", inputId: "storySubheading" },
+        body:       { prop: "content",    inputId: "storyContent" }
+      };
+      const mapping = fieldMap[field];
+      if (!mapping) return;
+
+      story[mapping.prop] = value;
+      const el = document.getElementById(mapping.inputId);
+      if (el) {
+        el.value = value;
+        adjustTextDirection(el, value);
+        autoExpandTextarea(el);
+      }
+
+      if (!msg.applied) msg.applied = {};
+      msg.applied[field] = true;
+
+      updateCharCounts();
+      renderLivePreview();
+      renderChatMessages();
+
+      const selectEl = document.getElementById("storySelect");
+      if (selectEl && selectEl.options[currentStoryIndex]) {
+        const title = story.heading || story.headline || "Untitled Story";
+        selectEl.options[currentStoryIndex].text = `${currentStoryIndex + 1}. ${title.slice(0, 90)}${title.length > 90 ? "..." : ""}`;
+      }
+    }
+
+    function applyAllTransformFields(msgIdx) {
+      applyTransformField(msgIdx, "heading");
+      applyTransformField(msgIdx, "subheading");
+      applyTransformField(msgIdx, "body");
+    }
+
+    function handleChatKeydown(event) {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendChatMessage();
+      }
+    }
+
+    function autoChatResize(el) {
+      el.style.height = "auto";
+      el.style.height = Math.min(el.scrollHeight, 100) + "px";
+    }
+
+    function setChatLoading(loading) {
+      const btn = document.getElementById("chatSendBtn");
+      const icon = document.getElementById("chatSendIcon");
+      const spinner = document.getElementById("chatSendSpinner");
+      const input = document.getElementById("chatInput");
+      if (loading) {
+        if (btn) btn.disabled = true;
+        if (icon) icon.classList.add("hidden");
+        if (spinner) spinner.classList.remove("hidden");
+        if (input) input.disabled = true;
+      } else {
+        if (btn) btn.disabled = false;
+        if (icon) icon.classList.remove("hidden");
+        if (spinner) spinner.classList.add("hidden");
+        if (input) { input.disabled = false; input.focus(); }
+      }
+    }
+
+    async function sendChatMessage() {
+      const input = document.getElementById("chatInput");
+      const errorEl = document.getElementById("chatErrorMsg");
+      const userMessage = (input?.value || "").trim();
+      if (!userMessage) return;
+      if (!stories || !stories[currentStoryIndex]) return;
+
+      if (errorEl) { errorEl.classList.add("hidden"); errorEl.innerText = ""; }
+
+      const heading = document.getElementById("storyHeadlineInput")?.value || "";
+      const subheading = document.getElementById("storySubheading")?.value || "";
+      const body = document.getElementById("storyContent")?.value || "";
+
+      const history = getChatHistory();
+      history.push({ role: "user", content: userMessage });
+      input.value = "";
+      autoChatResize(input);
+      renderChatMessages();
+      setChatLoading(true);
+
+      try {
+        const apiMessages = history
+          .filter(m => m.role === "user" || (m.role === "assistant" && !m.error))
+          .map(m => ({
+            role: m.role,
+            content: m.role === "user" ? m.content : (m.transformed ? JSON.stringify(m.transformed) : m.content)
+          }));
+        apiMessages.pop(); // Remove current user message — sent separately
+
+        const response = await fetch("/api/story/transform", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            story_index: currentStoryIndex,
+            heading, subheading, body,
+            user_message: userMessage,
+            messages: apiMessages
+          })
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          history.push({ role: "assistant", error: errData.detail || `Error ${response.status}` });
+        } else {
+          const data = await response.json();
+          history.push({ role: "assistant", transformed: data.transformed, applied: {} });
+        }
+      } catch (err) {
+        history.push({ role: "assistant", error: `Network error: ${err.message}` });
+      } finally {
+        setChatLoading(false);
+        renderChatMessages();
+      }
+    }
+
+    // Re-render chat when story changes
+    const _origHandleStoryChange = handleStoryChange;
+    handleStoryChange = function(indexStr) {
+      _origHandleStoryChange(indexStr);
+      if (chatPanelOpen) renderChatMessages();
+    };
   </script>
 </body>
 </html>

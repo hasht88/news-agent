@@ -60,3 +60,16 @@ class StoryUpdateRequest(BaseModel):
 class StoryFetchRequest(BaseModel):
     url: str
 
+
+class ChatMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+
+class StoryTransformRequest(BaseModel):
+    story_index: int
+    heading: str = ""
+    subheading: str = ""
+    body: str = ""
+    user_message: str
+    messages: List[ChatMessage] = Field(default_factory=list)

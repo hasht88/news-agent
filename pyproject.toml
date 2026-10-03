@@ -15,4 +15,5 @@ dependencies = [
     "trafilatura>=2.2.0",
     "uvicorn>=0.52.4",
     "vercel>=0.10.0",
+    "google-genai>=1.0.0",
 ]

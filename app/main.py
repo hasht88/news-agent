@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from vercel.blob import BlobClient
 from urllib.parse import urljoin
-from app.models import AgentSettings, StoryUpdateRequest, StoryItem, StoryFetchRequest
+from app.models import AgentSettings, StoryUpdateRequest, StoryItem, StoryFetchRequest, StoryTransformRequest
 from app.storage import load_settings, save_settings, is_blob_configured
 from curl_cffi import requests
 from collections import defaultdict
@@ -659,3 +659,133 @@ async def get_story_fetch_status():
         "completed": story_fetch_state.get("completed", 0),
         "stories": stories
     }
+
+
+# ==========================================
+# LLM STORY TRANSFORMATION ENDPOINT
+# ==========================================
+
+def _get_gemini_client():
+    """Lazily initialize Gemini client."""
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return None
+    from google import genai
+    return genai.Client(api_key=api_key)
+
+
+TRANSFORM_SYSTEM_PROMPT = """You are an expert editorial assistant for a professional news agency.
+You transform news stories based on the user's instructions.
+
+You will receive a news story with three fields: heading, subheading, and body.
+The user will give you instructions on how to transform the story (e.g., translate, rewrite, shorten, change tone, summarize, expand, etc.).
+
+You MUST respond with valid JSON containing exactly these three fields:
+{
+  "heading": "transformed heading text",
+  "subheading": "transformed subheading text",
+  "body": "transformed body text"
+}
+
+Rules:
+- Always return ALL three fields, even if only one changed.
+- If the user's instruction only applies to one field, return the others unchanged.
+- Preserve the journalistic accuracy and factual content of the original story.
+- Follow the user's transformation instructions precisely.
+- Do NOT add any text outside the JSON object — no markdown, no explanation, just the JSON.
+- If the user asks you to translate, translate ALL three fields to the target language.
+- Maintain proper formatting and paragraph structure in the body field."""
+
+
+@app.post("/api/story/transform")
+async def transform_story(payload: StoryTransformRequest):
+    """Transform a story using Gemini LLM based on user chat instructions."""
+    gemini_client = _get_gemini_client()
+    if not gemini_client:
+        raise HTTPException(
+            status_code=503,
+            detail="Gemini API key not configured. Please add GEMINI_API_KEY to your .env.local file."
+        )
+
+    # Build conversation contents for multi-turn
+    contents = []
+
+    # Add conversation history (last 10 messages)
+    history = payload.messages[-10:] if len(payload.messages) > 10 else payload.messages
+    for msg in history:
+        contents.append({
+            "role": "user" if msg.role == "user" else "model",
+            "parts": [{"text": msg.content}]
+        })
+
+    # Build current user message with story context
+    story_context = f"""Here is the current story:
+
+HEADING: {payload.heading}
+
+SUBHEADING: {payload.subheading}
+
+BODY: {payload.body}
+
+---
+User instruction: {payload.user_message}
+
+Respond with ONLY a JSON object containing the transformed "heading", "subheading", and "body" fields."""
+
+    contents.append({
+        "role": "user",
+        "parts": [{"text": story_context}]
+    })
+
+    try:
+        response = gemini_client.models.generate_content(
+            model="gemini-3.8-flash",
+            contents=contents,
+            config={
+                "system_instruction": TRANSFORM_SYSTEM_PROMPT,
+                "temperature": 0.7,
+                "max_output_tokens": 8192,
+            }
+        )
+
+        response_text = response.text.strip()
+
+        # Try to extract JSON from the response (handle markdown code blocks)
+        json_text = response_text
+        if json_text.startswith("```"):
+            # Remove markdown code block wrappers
+            lines = json_text.split("\n")
+            # Remove first line (```json or ```) and last line (```)
+            lines = [l for l in lines if not l.strip().startswith("```")]
+            json_text = "\n".join(lines).strip()
+
+        try:
+            result = json.loads(json_text)
+        except json.JSONDecodeError:
+            # If JSON parsing fails, return the raw text as an error
+            raise HTTPException(
+                status_code=422,
+                detail=f"LLM returned invalid JSON. Raw response: {response_text[:500]}"
+            )
+
+        # Validate expected fields
+        transformed = {
+            "heading": result.get("heading", payload.heading),
+            "subheading": result.get("subheading", payload.subheading),
+            "body": result.get("body", payload.body),
+        }
+
+        return {
+            "status": "success",
+            "transformed": transformed,
+            "assistant_message": payload.user_message
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Gemini API error: {e}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"LLM transformation failed: {str(e)}"
+        )
