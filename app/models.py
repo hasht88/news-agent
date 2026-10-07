@@ -57,6 +57,10 @@ class StoryUpdateRequest(BaseModel):
     story: StoryItem
 
 
+class StoryBatchSaveRequest(BaseModel):
+    stories: List[StoryItem]
+
+
 class StoryFetchRequest(BaseModel):
     url: str
 
@@ -66,6 +70,16 @@ class ChatMessage(BaseModel):
     content: str
 
 
+ALLOWED_AI_MODELS = [
+    "gemini-3.8-flash",
+    "gemini-3.7-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+]
+DEFAULT_AI_MODEL = "gemini-3.5-flash"
+
+
 class StoryTransformRequest(BaseModel):
     story_index: int
     heading: str = ""
@@ -73,3 +87,5 @@ class StoryTransformRequest(BaseModel):
     body: str = ""
     user_message: str
     messages: List[ChatMessage] = Field(default_factory=list)
+    model: str = DEFAULT_AI_MODEL
+

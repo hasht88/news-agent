@@ -50,7 +50,7 @@ def load_settings() -> AgentSettings:
             return get_default_settings()
 
         try:
-            data = client.get("data/settings.json", access='private')
+            data = client.get("data/settings.json", access='private', use_cache=False)
             data = json.loads(data.content)
             return AgentSettings(
                 source_languages=data.get("source_languages", list(DEFAULT_SOURCE_LANGUAGES)),
@@ -93,7 +93,8 @@ def save_settings(settings: AgentSettings) -> bool:
                 settings.model_dump_json(),
                 access="private",  # or "public" — now required
                 content_type="application/json",
-                overwrite=True)
+                overwrite=True,
+                cache_control_max_age=0)
             return True
         except Exception as e:
             print(f"Error saving settings: {e}")

@@ -7,7 +7,16 @@ from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from vercel.blob import BlobClient
 from urllib.parse import urljoin
-from app.models import AgentSettings, StoryUpdateRequest, StoryItem, StoryFetchRequest, StoryTransformRequest
+from app.models import (
+    AgentSettings,
+    StoryUpdateRequest,
+    StoryItem,
+    StoryFetchRequest,
+    StoryTransformRequest,
+    StoryBatchSaveRequest,
+    ALLOWED_AI_MODELS,
+    DEFAULT_AI_MODEL,
+)
 from app.storage import load_settings, save_settings, is_blob_configured
 from curl_cffi import requests
 from collections import defaultdict
@@ -197,7 +206,8 @@ def crawl(sources, header):
                     json.dumps(href_list),
                     access="private",  # or "public" — now required
                     content_type="application/json",
-                    overwrite=True)
+                    overwrite=True,
+                    cache_control_max_age=0)
             except Exception as e:
                 print(f"Error encountered: {e}")
     else:
@@ -218,7 +228,7 @@ def load_news_data():
             return []
 
         try:
-            data = client.get("data/links.json", access='private')
+            data = client.get("data/links.json", access='private', use_cache=False)
             data = json.loads(data.content)
             for index, item in enumerate(data):
                 item["id"] = index
@@ -319,7 +329,8 @@ def save_raw_selected_news(items: list[dict]):
                     json.dumps(items, ensure_ascii=False),
                     access="private",
                     content_type="application/json",
-                    overwrite=True
+                    overwrite=True,
+                    cache_control_max_age=0
                 )
             except Exception as e:
                 print(f"Error saving raw selected news to blob: {e}")
@@ -358,7 +369,7 @@ def load_selected_news():
         if not is_blob_configured():
             return []
         try:
-            data = client.get("data/selected_news.json", access="private")
+            data = client.get("data/selected_news.json", access="private", use_cache=False)
             return json.loads(data.content)
         except Exception as e:
             print(f"Error loading selected news from blob: {e}")
@@ -446,7 +457,7 @@ async def update_story_item(payload: StoryUpdateRequest):
     
     updated_dict = payload.story.model_dump()
     stories[payload.index] = updated_dict
-    
+
     # Save back to storage
     ensure_data_dir()
     if os.environ.get("VERCEL"):
@@ -457,7 +468,8 @@ async def update_story_item(payload: StoryUpdateRequest):
                     json.dumps(stories, ensure_ascii=False),
                     access="private",
                     content_type="application/json",
-                    overwrite=True
+                    overwrite=True,
+                    cache_control_max_age=0
                 )
             except Exception as e:
                 print(f"Error updating selected news to blob: {e}")
@@ -471,6 +483,44 @@ async def update_story_item(payload: StoryUpdateRequest):
             raise HTTPException(status_code=500, detail="Failed to save story to file.")
 
     return {"status": "success", "message": "Story saved successfully!", "story": updated_dict}
+
+@app.post("/api/story/save-all")
+async def save_all_stories(payload: StoryBatchSaveRequest):
+    items = [s.model_dump() for s in payload.stories]
+
+    # Auto-detect language only for stories where source_language is missing
+    missing_lang = [it for it in items if not (it.get("source_language") or "").strip()]
+    if missing_lang:
+        detected = detect_lang(missing_lang)
+        for target, src in zip(missing_lang, detected):
+            target["source_language"] = src.get("source_language", "")
+
+    ensure_data_dir()
+    if os.environ.get("VERCEL"):
+        if is_blob_configured():
+            try:
+                client.put(
+                    "data/selected_news.json",
+                    json.dumps(items, ensure_ascii=False),
+                    access="private",
+                    content_type="application/json",
+                    overwrite=True,
+                    cache_control_max_age=0
+                )
+            except Exception as e:
+                print(f"Error saving batch selected news to blob: {e}")
+                raise HTTPException(status_code=500, detail="Failed to save stories to blob.")
+        else:
+            raise HTTPException(status_code=500, detail="Vercel Blob token not configured.")
+    else:
+        try:
+            with open(SELECTED_NEWS_FILE, "w", encoding="utf-8") as f:
+                json.dump(items, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Error saving batch selected news to file: {e}")
+            raise HTTPException(status_code=500, detail="Failed to save stories to file.")
+
+    return {"status": "success", "count": len(items)}
 
 story_fetch_state = {
     "status": "idle",
@@ -625,7 +675,6 @@ def background_fetch_all_stories():
                                 })
                 except Exception as e:
                     print(f"Error background fetching story {idx} ({url}): {e}")
-
             story_fetch_state["completed"] = idx + 1
             # Save progress as each story is fetched
             save_raw_selected_news(stories)
@@ -737,9 +786,12 @@ Respond with ONLY a JSON object containing the transformed "heading", "subheadin
         "parts": [{"text": story_context}]
     })
 
+    requested_model = (payload.model or "").strip()
+    selected_model = requested_model if requested_model in ALLOWED_AI_MODELS else DEFAULT_AI_MODEL
+
     try:
         response = gemini_client.models.generate_content(
-            model="gemini-3.8-flash",
+            model=selected_model,
             contents=contents,
             config={
                 "system_instruction": TRANSFORM_SYSTEM_PROMPT,
@@ -777,6 +829,7 @@ Respond with ONLY a JSON object containing the transformed "heading", "subheadin
 
         return {
             "status": "success",
+            "model": selected_model,
             "transformed": transformed,
             "assistant_message": payload.user_message
         }
