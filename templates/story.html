@@ -181,11 +181,63 @@
               {{ loop.index }}. {{ story_title[:90] }}{% if story_title|length > 90 %}...{% endif %}
             </option>
             {% endfor %}
+            <option value="__add_new__" class="font-semibold text-stone-900 bg-stone-100">+ Add story manually...</option>
           </select>
           <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-stone-400">
             <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
             </svg>
+          </div>
+        </div>
+
+        <!-- MANUAL STORY URL INPUT BAR (APPEARS ON SELECTING ADD STORY) -->
+        <div id="manualAddStoryBar" class="hidden mt-2.5 p-2.5 sm:p-3 bg-stone-50/90 rounded-lg border border-stone-200/90 shadow-2xs transition-all">
+          <div class="flex items-center gap-2">
+            <div class="relative flex-1">
+              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-stone-400">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+              </div>
+              <input 
+                type="url" 
+                id="manualStoryUrlInput" 
+                placeholder="Paste news article URL here (e.g. https://...)" 
+                onpaste="handleManualUrlPaste(event)"
+                onkeydown="handleManualUrlKeydown(event)"
+                class="w-full bg-white border border-stone-200 rounded-lg pl-9 pr-3 py-2 text-xs sm:text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:border-stone-500 shadow-2xs font-mono transition"
+              />
+            </div>
+            <button 
+              type="button" 
+              id="manualAddStoryBtn" 
+              onclick="submitManualStoryUrl()" 
+              class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-stone-900 hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition shadow-2xs cursor-pointer shrink-0"
+            >
+              <svg id="manualAddStorySpinner" class="w-3.5 h-3.5 animate-spin hidden" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span id="manualAddStoryBtnText">Fetch & Add</span>
+            </button>
+            <button 
+              type="button" 
+              onclick="cancelManualAddStory()" 
+              class="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-200/50 rounded-lg transition cursor-pointer shrink-0"
+              title="Cancel"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div id="manualAddStoryError" class="hidden mt-2 text-[11px] text-rose-600 font-medium flex items-center gap-1 pl-1">
+            <svg class="w-3.5 h-3.5 text-rose-500 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+            <span id="manualAddStoryErrorText"></span>
           </div>
         </div>
       </section>
@@ -581,10 +633,185 @@
     let currentStoryIndex = 0;
 
     function handleStoryChange(indexStr) {
+      if (indexStr === "__add_new__") {
+        openManualAddStoryBar();
+        return;
+      }
+      closeManualAddStoryBar(false);
       const idx = parseInt(indexStr, 10);
       if (isNaN(idx) || idx < 0 || idx >= stories.length) return;
       currentStoryIndex = idx;
       renderStoryDetails(stories[idx]);
+    }
+
+    // ==========================================
+    // MANUAL STORY CREATION ENGINE
+    // ==========================================
+    let isFetchingManualStory = false;
+
+    function openManualAddStoryBar() {
+      const bar = document.getElementById("manualAddStoryBar");
+      const input = document.getElementById("manualStoryUrlInput");
+      const errEl = document.getElementById("manualAddStoryError");
+      if (errEl) errEl.classList.add("hidden");
+      if (bar) {
+        bar.classList.remove("hidden");
+        setTimeout(() => input?.focus(), 50);
+      }
+    }
+
+    function closeManualAddStoryBar(revertSelection = true) {
+      const bar = document.getElementById("manualAddStoryBar");
+      const input = document.getElementById("manualStoryUrlInput");
+      const errEl = document.getElementById("manualAddStoryError");
+      if (bar) bar.classList.add("hidden");
+      if (input) input.value = "";
+      if (errEl) errEl.classList.add("hidden");
+
+      if (revertSelection) {
+        const selectEl = document.getElementById("storySelect");
+        if (selectEl) {
+          selectEl.value = String(currentStoryIndex);
+        }
+      }
+    }
+
+    function cancelManualAddStory() {
+      closeManualAddStoryBar(true);
+    }
+
+    function handleManualUrlKeydown(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        submitManualStoryUrl();
+      } else if (event.key === "Escape") {
+        cancelManualAddStory();
+      }
+    }
+
+    function handleManualUrlPaste(event) {
+      setTimeout(() => {
+        const input = document.getElementById("manualStoryUrlInput");
+        const val = (input?.value || "").trim();
+        if (val && (val.startsWith("http://") || val.startsWith("https://"))) {
+          submitManualStoryUrl();
+        }
+      }, 50);
+    }
+
+    async function submitManualStoryUrl() {
+      if (isFetchingManualStory) return;
+      const input = document.getElementById("manualStoryUrlInput");
+      const errEl = document.getElementById("manualAddStoryError");
+      const errText = document.getElementById("manualAddStoryErrorText");
+      const btn = document.getElementById("manualAddStoryBtn");
+      const btnText = document.getElementById("manualAddStoryBtnText");
+      const spinner = document.getElementById("manualAddStorySpinner");
+
+      const url = (input?.value || "").trim();
+      if (!url || (!url.startsWith("http://") && !url.startsWith("https://"))) {
+        if (errEl && errText) {
+          errText.innerText = "Please enter a valid HTTP or HTTPS URL.";
+          errEl.classList.remove("hidden");
+        }
+        return;
+      }
+
+      if (errEl) errEl.classList.add("hidden");
+      isFetchingManualStory = true;
+      if (btn) btn.disabled = true;
+      if (input) input.disabled = true;
+      if (spinner) spinner.classList.remove("hidden");
+      if (btnText) btnText.innerText = "Fetching...";
+
+      try {
+        const resp = await fetch("/api/story/fetch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: url })
+        });
+
+        if (!resp.ok) {
+          const errData = await resp.json().catch(() => ({}));
+          throw new Error(errData.detail || `Extraction failed with HTTP ${resp.status}`);
+        }
+
+        const res = await resp.json();
+        const fetched = res.data;
+        if (!fetched) {
+          throw new Error("Unable to extract content from the provided URL.");
+        }
+
+        const newStory = {
+          heading: (fetched.heading || "").trim() || "Untitled Story",
+          subheading: (fetched.subheading || "").trim(),
+          summary: (fetched.summary || "").trim(),
+          content: (fetched.content || "").trim(),
+          author: (fetched.author || "").trim(),
+          date: (fetched.date || "").trim(),
+          image: (fetched.image || "").trim(),
+          sitename: (fetched.sitename || "").trim(),
+          url: url,
+          source_language: (fetched.source_language || "").trim(),
+          tags: Array.isArray(fetched.tags) ? fetched.tags : [],
+          blocks: Array.isArray(fetched.blocks) ? fetched.blocks : []
+        };
+
+        // Add to local stories array
+        stories.push(newStory);
+        const newIndex = stories.length - 1;
+
+        // Persist all stories to backend
+        try {
+          await fetch("/api/story/save-all", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ stories: stories })
+          });
+        } catch (saveErr) {
+          console.warn("Failed to persist updated stories queue:", saveErr);
+        }
+
+        // Add new option to dropdown before the '__add_new__' option
+        const selectEl = document.getElementById("storySelect");
+        if (selectEl) {
+          const addOption = selectEl.querySelector('option[value="__add_new__"]');
+          const newOption = document.createElement("option");
+          newOption.value = String(newIndex);
+          const title = newStory.heading || newStory.headline || "Untitled Story";
+          newOption.text = `${newIndex + 1}. ${title.slice(0, 90)}${title.length > 90 ? "..." : ""}`;
+          if (addOption) {
+            selectEl.insertBefore(newOption, addOption);
+          } else {
+            selectEl.appendChild(newOption);
+          }
+          selectEl.value = String(newIndex);
+        }
+
+        // Switch to the newly added story
+        currentStoryIndex = newIndex;
+        renderStoryDetails(newStory);
+        renderLivePreview();
+        updateCharCounts();
+
+        // Close and reset manual add bar
+        closeManualAddStoryBar(false);
+        showSaveStatus("Story fetched and added successfully!", false);
+      } catch (err) {
+        if (errEl && errText) {
+          errText.innerText = err.message || "Failed to fetch story from URL.";
+          errEl.classList.remove("hidden");
+        }
+      } finally {
+        isFetchingManualStory = false;
+        if (btn) btn.disabled = false;
+        if (input) {
+          input.disabled = false;
+          input.focus();
+        }
+        if (spinner) spinner.classList.add("hidden");
+        if (btnText) btnText.innerText = "Fetch & Add";
+      }
     }
 
     function renderStoryDetails(story) {
@@ -1976,7 +2203,7 @@
     const _origHandleStoryChange = handleStoryChange;
     handleStoryChange = function(indexStr) {
       _origHandleStoryChange(indexStr);
-      if (chatPanelOpen) renderChatMessages();
+      if (chatPanelOpen && indexStr !== "__add_new__") renderChatMessages();
     };
   </script>
 </body>
