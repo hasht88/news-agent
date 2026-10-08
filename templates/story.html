@@ -242,119 +242,106 @@
         </div>
       </section>
 
-      <!-- MODE SWITCHER TABS: EDITOR vs LIVE PREVIEW -->
-      <div class="flex items-center justify-between mb-5 pb-2.5 border-b border-stone-200">
+      <!-- MODE SWITCHER TABS & ACTION TOOLBAR (EDITOR vs READER PREVIEW + ACTIONS) -->
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5 pb-3 border-b border-stone-200">
+        <!-- Mode Tabs: Editor & Reader Preview -->
         <div class="inline-flex p-0.5 bg-stone-100 rounded-lg border border-stone-200">
           <button 
             type="button" 
             id="tabBtnEditor" 
             onclick="switchStoryTab('editor')"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition bg-white text-stone-900 shadow-2xs cursor-pointer"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all bg-white text-stone-900 shadow-xs cursor-pointer"
           >
             <svg class="w-3.5 h-3.5 text-stone-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
             </svg>
-            <span>Story Editor</span>
+            <span>Editor</span>
           </button>
           <button 
             type="button" 
             id="tabBtnPreview" 
             onclick="switchStoryTab('preview')"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition text-stone-500 hover:text-stone-900 cursor-pointer"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all text-stone-500 hover:text-stone-800 cursor-pointer"
           >
             <svg class="w-3.5 h-3.5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
             </svg>
-            <span>Reader Experience</span>
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Reader Preview</span>
           </button>
         </div>
 
-        <div class="hidden sm:flex items-center gap-1.5 text-xs font-mono text-stone-400">
-          <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-          <span>Live Synchronized</span>
+        <!-- Action Buttons: Source, Fetch Content, AI Transform, Save Story (Individual Buttons) -->
+        <div class="flex items-center gap-2">
+          <a
+            id="storyOpenBtn" 
+            href="#" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all bg-white hover:bg-stone-50 text-stone-700 hover:text-stone-900 border border-stone-200 hover:border-stone-300 shadow-xs cursor-pointer"
+            title="Open source URL in new tab"
+          >
+            <svg class="w-3.5 h-3.5 text-stone-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            <span>Source</span>
+          </a>
+
+          <button
+            id="fetchArticleBtn"
+            type="button"
+            onclick="fetchCurrentStoryArticle()"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all bg-white hover:bg-stone-50 text-stone-700 hover:text-stone-900 border border-stone-200 hover:border-stone-300 shadow-xs cursor-pointer"
+            title="Fetch full article body & images from source URL"
+          >
+            <svg id="fetchArticleSpinner" class="w-3.5 h-3.5 animate-spin hidden text-stone-800" viewBox="0 0 24 24" fill="none">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <svg id="fetchArticleIcon" class="w-3.5 h-3.5 text-stone-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span id="fetchArticleBtnText">Fetch Content</span>
+          </button>
+
+          <button
+            id="llmChatToggleBtn"
+            type="button"
+            onclick="toggleChatPanel()"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all bg-white hover:bg-stone-50 text-stone-700 hover:text-stone-900 border border-stone-200 hover:border-stone-300 shadow-xs cursor-pointer"
+            title="Open AI Story Transform chat"
+          >
+            <svg class="w-3.5 h-3.5 text-stone-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span id="llmChatToggleBtnText">AI Transform</span>
+          </button>
+
+          <button
+            id="saveStoryBtn"
+            type="button"
+            onclick="saveCurrentStory()"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all bg-white hover:bg-stone-50 text-stone-700 hover:text-stone-900 border border-stone-200 hover:border-stone-300 shadow-xs cursor-pointer"
+            title="Save changes to active story"
+          >
+            <svg id="saveSpinner" class="w-3.5 h-3.5 animate-spin hidden text-stone-800" viewBox="0 0 24 24" fill="none">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <svg id="saveIcon" class="w-3.5 h-3.5 text-stone-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span id="saveBtnText">Save Story</span>
+          </button>
         </div>
       </div>
 
       <!-- SELECTED STORY EDITORIAL WORKFLOW SECTION -->
       <section id="storyDetailsCard" class="bg-stone-50/50 rounded-xl border border-stone-200/90 p-5 sm:p-6 transition-all">
-        
-        <!-- Header bar inside editor -->
-        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 mb-4 border-b border-stone-200">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-mono font-bold text-stone-600 uppercase tracking-wider flex items-center gap-1.5">
-              Draft Composition
-            </span>
-          </div>
-
-            <!-- Action Buttons: Open source article, Fetch/Refresh content & Save -->
-            <div class="flex items-center gap-2">
-              <a
-                id="storyOpenBtn" 
-                href="#" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                class="inline-flex items-center justify-center gap-1 px-2.5 py-1 bg-white hover:bg-stone-100 text-stone-700 text-xs font-mono rounded border border-stone-200 shadow-2xs transition"
-                title="Open source URL in new tab"
-              >
-                <span>Source</span>
-                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                  <polyline points="15 3 21 3 21 9"/>
-                  <line x1="10" y1="14" x2="21" y2="3"/>
-                </svg>
-              </a>
-
-              <button
-                id="fetchArticleBtn"
-                type="button"
-                onclick="fetchCurrentStoryArticle()"
-                class="inline-flex items-center justify-center gap-1 px-2.5 py-1 bg-white hover:bg-stone-100 text-stone-700 text-xs font-mono rounded border border-stone-200 shadow-2xs transition cursor-pointer"
-                title="Fetch full article body & images from source URL"
-              >
-                <svg id="fetchArticleSpinner" class="w-3 h-3 animate-spin hidden text-stone-800" viewBox="0 0 24 24" fill="none">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <svg id="fetchArticleIcon" class="w-3 h-3 text-stone-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                <span id="fetchArticleBtnText">Fetch Content</span>
-              </button>
-
-              <button
-                id="llmChatToggleBtn"
-                type="button"
-                onclick="toggleChatPanel()"
-                class="inline-flex items-center justify-center gap-1 px-2.5 py-1 bg-white hover:bg-stone-100 text-stone-700 text-xs font-mono rounded border border-stone-200 shadow-2xs transition cursor-pointer"
-                title="Open AI Story Transform chat"
-              >
-                <svg class="w-3 h-3 text-stone-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-                <span id="llmChatToggleBtnText">AI Transform</span>
-              </button>
-
-              <button
-                id="saveStoryBtn"
-                type="button"
-                onclick="saveCurrentStory()"
-                class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1 bg-stone-900 hover:bg-stone-800 text-white text-xs font-medium rounded shadow-2xs transition"
-              >
-                <svg id="saveSpinner" class="w-3 h-3 animate-spin hidden text-white" viewBox="0 0 24 24" fill="none">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <svg id="saveIcon" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span id="saveBtnText">Save Story</span>
-              </button>
-            </div>
-        </div>
 
         <!-- Tags / Keywords if available -->
         <div id="storyTagsWrapper" class="mb-4 hidden">
@@ -362,36 +349,11 @@
           <div id="storyTagsContainer" class="flex flex-wrap items-center gap-1.5"></div>
         </div>
 
-        <!-- Meta Details: Author, Date / Location, Image URL -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-          <div>
-            <label for="storyAuthor" class="block text-xs font-mono font-medium text-stone-500 uppercase tracking-wider mb-1">Author / Byline</label>
-            <input 
-              type="text" 
-              id="storyAuthor" 
-              oninput="handleFieldInput()"
-              class="w-full text-xs rounded-lg border border-stone-200 bg-white p-2 text-stone-800 focus:border-stone-500 outline-none transition" 
-              placeholder="e.g. Staff Reporter"
-            >
-          </div>
-          <div>
-            <label for="storyDate" class="block text-xs font-mono font-medium text-stone-500 uppercase tracking-wider mb-1">Publish Dateline</label>
-            <input 
-              type="text" 
-              id="storyDate" 
-              oninput="handleFieldInput()"
-              class="w-full text-xs rounded-lg border border-stone-200 bg-white p-2 text-stone-800 focus:border-stone-500 outline-none transition" 
-              placeholder="e.g. Islamabad — Wire Desk"
-            >
-          </div>
-        </div>
-
         <!-- Headline / Heading -->
         <div class="mb-4">
           <div class="flex justify-between items-center mb-1">
             <label for="storyHeadlineInput" class="text-xs font-mono font-bold text-stone-700 uppercase tracking-wider flex items-center gap-1.5">
-              <span class="w-1.5 h-3 bg-stone-900 rounded-xs"></span>
-              Editorial Headline
+              Headline
             </label>
             <span id="headlineCharCount" class="text-[10px] font-mono text-stone-400">0 chars</span>
           </div>
@@ -399,7 +361,7 @@
             id="storyHeadlineInput" 
             rows="2" 
             oninput="handleFieldInput(); updateCharCounts(); autoExpandTextarea(this);"
-            class="w-full font-editorial text-lg sm:text-xl font-semibold text-stone-950 rounded-lg border border-stone-200 bg-white p-3 focus:border-stone-500 outline-none transition leading-snug overflow-hidden resize-y"
+            class="w-full font-editorial text-lg sm:text-xl font-semibold text-stone-950 rounded-lg border border-stone-200 bg-white p-3 focus:border-stone-500 outline-none transition leading-snug overflow-hidden resize-y min-h-[58px]"
             placeholder="Enter an accurate, punchy headline..."
           ></textarea>
         </div>
@@ -414,7 +376,7 @@
             id="storySubheading" 
             rows="2" 
             oninput="handleFieldInput(); updateCharCounts(); autoExpandTextarea(this);"
-            class="w-full font-editorial italic text-xs sm:text-sm text-stone-700 rounded-lg border border-stone-200 bg-white p-2.5 focus:border-stone-500 outline-none transition leading-relaxed overflow-hidden resize-y"
+            class="w-full font-editorial italic text-xs sm:text-sm text-stone-700 rounded-lg border border-stone-200 bg-white p-2.5 focus:border-stone-500 outline-none transition leading-relaxed overflow-hidden resize-y min-h-[46px]"
             placeholder="Elaborate on the headline with critical background context..."
           ></textarea>
         </div>
@@ -431,7 +393,7 @@
             id="storySummary" 
             rows="3" 
             oninput="handleFieldInput(); autoExpandTextarea(this);"
-            class="w-full text-xs sm:text-sm bg-stone-100/60 text-stone-900 rounded-lg border border-stone-300/80 p-3 focus:border-stone-500 focus:bg-white outline-none transition leading-relaxed overflow-hidden resize-y"
+            class="w-full text-xs sm:text-sm bg-stone-100/60 text-stone-900 rounded-lg border border-stone-300/80 p-3 focus:border-stone-500 focus:bg-white outline-none transition leading-relaxed overflow-hidden resize-y min-h-[64px]"
             placeholder="Key takeaways in 2-3 concise sentences..."
           ></textarea>
         </div>
@@ -507,6 +469,32 @@
           </div>
         </div>
 
+        <!-- Meta Details: Author & Publish Dateline (at bottom of story) -->
+        <div class="pt-5 border-t border-stone-200 mb-5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label for="storyAuthor" class="block text-xs font-mono font-medium text-stone-500 uppercase tracking-wider mb-1">Author</label>
+              <input 
+                type="text" 
+                id="storyAuthor" 
+                oninput="handleFieldInput()"
+                class="w-full text-xs rounded-lg border border-stone-200 bg-white p-2.5 text-stone-800 focus:border-stone-500 outline-none transition shadow-2xs" 
+                placeholder="e.g. Staff Reporter"
+              >
+            </div>
+            <div>
+              <label for="storyDate" class="block text-xs font-mono font-medium text-stone-500 uppercase tracking-wider mb-1">Publish Dateline</label>
+              <input 
+                type="text" 
+                id="storyDate" 
+                oninput="handleFieldInput()"
+                class="w-full text-xs rounded-lg border border-stone-200 bg-white p-2.5 text-stone-800 focus:border-stone-500 outline-none transition shadow-2xs" 
+                placeholder="e.g. Islamabad — Wire Desk"
+              >
+            </div>
+          </div>
+        </div>
+
         <!-- Status / Feedback Toast inside card footer -->
         <div class="flex items-center justify-between pt-3 border-t border-stone-200 text-xs">
           <div id="saveStatusMessage" class="opacity-0 transition-opacity duration-300 font-mono text-xs"></div>
@@ -527,43 +515,31 @@
         <!-- Live Preview Chrome Header -->
         <div class="px-4 py-3 bg-stone-900 text-white flex items-center justify-between border-b border-stone-800">
           <div class="flex items-center space-x-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-stone-600 inline-block"></span>
-            <span class="w-2.5 h-2.5 rounded-full bg-stone-500 inline-block"></span>
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
             <span class="text-xs font-mono text-stone-400 ml-2">Publication Preview</span>
           </div>
           <div class="flex items-center space-x-2 text-xs">
             <span id="pvLangBadge" class="hidden bg-stone-800 text-stone-300 px-2 py-0.5 rounded border border-stone-700 text-[10px] font-mono uppercase tracking-wider">LANG: EN</span>
-            <span class="bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800 text-[10px] font-mono uppercase tracking-wider flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Live Sync
-            </span>
           </div>
         </div>
 
         <!-- Rendered Article Surface -->
         <div id="pvReaderSurface" class="p-6 sm:p-10 bg-white font-editorial max-w-3xl mx-auto">
-          
-          <!-- Category / Sitename Pill -->
-          <div id="pvCategory" class="font-mono text-[11px] font-medium tracking-widest text-stone-500 uppercase mb-3">
-            WIRE DISPATCH
-          </div>
-
           <!-- Live Headline -->
           <h1 id="pvHeadline" class="text-2xl sm:text-3xl lg:text-4xl font-editorial font-bold text-stone-950 leading-tight mb-3 tracking-tight">
             Untitled Story
           </h1>
 
           <!-- Live Subheading -->
-          <p id="pvSubheading" class="text-base sm:text-lg text-stone-600 font-editorial italic leading-relaxed mb-5 pb-4 border-b border-stone-200">
+          <p id="pvSubheading" class="text-base sm:text-lg text-stone-600 font-editorial italic leading-relaxed mb-6">
           </p>
 
-          <!-- Byline and Dateline info -->
-          <div class="font-sans flex items-center justify-between text-xs text-stone-500 mb-6 pb-2">
-            <div>
-              By <span id="pvAuthor" class="font-semibold text-stone-900">Staff Reporter</span>
+          <!-- Byline and Dateline info (Styled like screenshot c.png) -->
+          <div class="font-sans flex items-center justify-between text-xs pt-4 mb-6 border-t border-slate-200/80">
+            <div class="text-slate-500">
+              By <span id="pvAuthor" class="font-bold text-slate-900">Staff Reporter</span>
             </div>
-            <div id="pvDateline" class="font-mono text-stone-400">
+            <div id="pvDateline" class="font-sans text-slate-400 font-medium tracking-wide uppercase">
               Today
             </div>
           </div>
@@ -590,12 +566,6 @@
 
           <!-- Dynamic Modular Blocks Output -->
           <div id="pvBodyBlocks" class="space-y-6 pt-4 border-t border-stone-100">
-          </div>
-
-          <!-- News Footer Tag -->
-          <div class="mt-12 pt-5 border-t border-stone-200 font-mono text-[11px] text-stone-400 flex justify-between items-center">
-            <span>Media Agent &bull; Wire Syndicate</span>
-            <span class="text-stone-300">End of Dispatch</span>
           </div>
 
         </div>
@@ -852,10 +822,10 @@
       if (openBtnEl) openBtnEl.href = story.url || "#";
 
       // Detect RTL for text areas if language or characters are Arabic/Urdu
-      adjustTextDirection(headlineInput, headlineVal);
-      adjustTextDirection(subheadingInput, story.subheading || "");
-      adjustTextDirection(summaryInput, story.summary || "");
-      adjustTextDirection(contentInput, story.content || "");
+      adjustTextDirection(headlineInput, headlineVal, story.source_language);
+      adjustTextDirection(subheadingInput, story.subheading || "", story.source_language);
+      adjustTextDirection(summaryInput, story.summary || "", story.source_language);
+      adjustTextDirection(contentInput, story.content || "", story.source_language);
 
       if (langBadgeEl) {
         const lang = (story.source_language || "").toUpperCase();
@@ -920,10 +890,10 @@
         if (previewCard) previewCard.classList.remove("hidden");
 
         if (tabEditor) {
-          tabEditor.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-800 cursor-pointer";
+          tabEditor.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all text-stone-500 hover:text-stone-800 cursor-pointer";
         }
         if (tabPreview) {
-          tabPreview.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 shadow-xs cursor-pointer";
+          tabPreview.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all bg-white text-stone-900 shadow-xs cursor-pointer";
         }
         renderLivePreview();
       } else {
@@ -931,11 +901,16 @@
         if (previewCard) previewCard.classList.add("hidden");
 
         if (tabEditor) {
-          tabEditor.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 shadow-xs cursor-pointer";
+          tabEditor.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all bg-white text-stone-900 shadow-xs cursor-pointer";
         }
         if (tabPreview) {
-          tabPreview.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-800 cursor-pointer";
+          tabPreview.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all text-stone-500 hover:text-stone-800 cursor-pointer";
         }
+
+        // When returning to editor tab, recalculate and expand all textareas cleanly
+        requestAnimationFrame(() => {
+          autoExpandAllTextareas();
+        });
       }
     }
 
@@ -978,7 +953,19 @@
         }
       }
       if (pvAuthor) pvAuthor.innerText = author;
-      if (pvDateline) pvDateline.innerText = date;
+      if (pvDateline) {
+        let displayDate = date;
+        if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          try {
+            const parts = date.split('-');
+            const dObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
+            displayDate = `${months[dObj.getMonth()]} ${dObj.getDate()}, ${dObj.getFullYear()}`;
+          } catch (e) {}
+        }
+        const locationOrSource = (sitename || "").trim();
+        pvDateline.innerText = locationOrSource ? `${locationOrSource.toUpperCase()} — ${displayDate}` : displayDate;
+      }
       if (pvCategory) pvCategory.innerText = sitename;
 
       if (pvLangBadge) {
@@ -990,8 +977,8 @@
         }
       }
 
-      // Check RTL
-      const isRtl = /[\u0600-\u06FF]/.test(headline + " " + content);
+      // Check RTL using source language or dominant character ratio
+      const isRtl = isStoryRtl(headline + " " + content, story.source_language);
       if (pvReaderSurface) {
         pvReaderSurface.style.direction = isRtl ? "rtl" : "ltr";
         pvReaderSurface.style.textAlign = isRtl ? "right" : "left";
@@ -1077,13 +1064,40 @@
 
     function autoExpandTextarea(el) {
       if (!el) return;
+      // If element is hidden (e.g. while in Reader Experience tab), scrollHeight is 0 and corrupts the height.
+      if (el.offsetParent === null) return;
       el.style.height = 'auto';
       el.style.height = (el.scrollHeight + 4) + 'px';
     }
 
-    function adjustTextDirection(el, text) {
+    function autoExpandAllTextareas() {
+      const ids = ["storyHeadlineInput", "storySubheading", "storySummary", "storyContent"];
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.offsetParent !== null) {
+          el.style.height = 'auto';
+          el.style.height = (el.scrollHeight + 4) + 'px';
+        }
+      });
+    }
+
+    function isStoryRtl(text, sourceLang) {
+      if (sourceLang) {
+        const lang = String(sourceLang).trim().toLowerCase();
+        if (["en", "english"].includes(lang)) return false;
+        if (["ar", "arabic", "ur", "urdu", "fa", "farsi", "he", "hebrew"].includes(lang)) return true;
+      }
+      if (!text) return false;
+      const rtlMatches = text.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g);
+      const ltrMatches = text.match(/[A-Za-z]/g);
+      const rtlCount = rtlMatches ? rtlMatches.length : 0;
+      const ltrCount = ltrMatches ? ltrMatches.length : 0;
+      return rtlCount > ltrCount;
+    }
+
+    function adjustTextDirection(el, text, sourceLang) {
       if (!el) return;
-      const isRtl = /[\u0600-\u06FF]/.test(text);
+      const isRtl = isStoryRtl(text, sourceLang);
       if (isRtl) {
         el.style.direction = "rtl";
         el.style.textAlign = "right";
@@ -1105,6 +1119,13 @@
       current.author = document.getElementById("storyAuthor")?.value || "";
       current.date = document.getElementById("storyDate")?.value || "";
       current.image = document.getElementById("storyImage")?.value || "";
+
+      // Realtime text direction adjustment for active edits
+      const sLang = current.source_language || "";
+      adjustTextDirection(document.getElementById("storyHeadlineInput"), hVal, sLang);
+      adjustTextDirection(document.getElementById("storySubheading"), current.subheading, sLang);
+      adjustTextDirection(document.getElementById("storySummary"), current.summary, sLang);
+      adjustTextDirection(document.getElementById("storyContent"), current.content, sLang);
 
       // Update dropdown option label
       const selectEl = document.getElementById("storySelect");
