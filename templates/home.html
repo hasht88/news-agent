@@ -176,7 +176,30 @@
           <span>Filter Desk:</span>
         </span>
         <div id="filterTagsList" class="flex flex-wrap items-center gap-1.5 min-h-[26px]">
-          <!-- Filter tag pills rendered dynamically -->
+          <!-- Filter tag pills pre-rendered server-side for instantaneous display, dynamically updated by JS -->
+          {% if settings and settings.keywords %}
+            {% for tag in settings.keywords %}
+              {% if tag.strip() %}
+              <div 
+                class="filter-tag-chip inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-mono cursor-pointer transition select-none border bg-white text-stone-700 border-stone-200 hover:border-stone-400 hover:bg-stone-50"
+                title="Filter by '{{ tag.strip() }}'"
+              >
+                <span class="cursor-pointer" onclick="toggleTag('{{ tag.strip()|e }}')">{{ tag.strip() }}</span>
+                <button 
+                  type="button" 
+                  title="Remove '{{ tag.strip() }}' filter tag" 
+                  class="p-0.5 rounded transition-colors text-stone-400 hover:text-stone-700 hover:bg-stone-200"
+                  onclick="event.stopPropagation(); removeTag('{{ tag.strip()|e }}')"
+                >
+                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
         </div>
       </div>
 
@@ -394,6 +417,7 @@
               type="checkbox"
               name="selected_news"
               value="{{ item.id }}"
+              onchange="checkAnySelectedAndAdvanceStepper()"
               class="news-checkbox w-4 h-4 text-stone-900 rounded border-stone-300 focus:ring-stone-500/20 focus:ring-2 cursor-pointer accent-stone-900 transition"
             >
           </div>
@@ -470,12 +494,22 @@
       allSelected = !allSelected;
       visibleCheckboxes.forEach(cb => cb.checked = allSelected);
       document.getElementById("selectAllText").innerText = allSelected ? "Deselect All" : "Select All";
+      if (allSelected && typeof updateStepperVisuals === 'function') {
+        updateStepperVisuals(2);
+      }
+    }
+
+    function checkAnySelectedAndAdvanceStepper() {
+      const anyChecked = document.querySelectorAll(".news-checkbox:checked").length > 0;
+      if (anyChecked && typeof updateStepperVisuals === 'function' && currentPipelineStep === 1) {
+        updateStepperVisuals(2);
+      }
     }
 
     // Filter Tags System (Selectable & Removable)
-    let availableTags = [];
+    let defaultKeywords = {% if settings and settings.keywords %}{{ settings.keywords | tojson }}{% else %}[]{% endif %};
     const activeTags = new Set();
-    let defaultKeywords = [];
+    let availableTags = [];
 
     // Merge tag lists while treating tags as case-insensitive duplicates
     // (keeps the casing of the first occurrence encountered)
@@ -506,6 +540,13 @@
       });
       return Array.from(foundTags);
     }
+
+    // Synchronously initialize availableTags from pre-loaded settings keywords and DOM tags
+    (function initAvailableTagsImmediately() {
+      const domTags = collectTagsFromDOM();
+      const combined = dedupeTagsCaseInsensitive(defaultKeywords, domTags);
+      availableTags = combined.length > 0 ? combined : dedupeTagsCaseInsensitive(defaultKeywords);
+    })();
 
     // Render filter tag chips into #filterTagsList
     function renderFilterTags() {
@@ -646,6 +687,9 @@
         });
       }
       isMainFilterActive = true;
+      if (typeof updateStepperVisuals === 'function') {
+        updateStepperVisuals(2);
+      }
       updateFilterButtonUI();
       renderFilterTags();
     }
@@ -782,25 +826,31 @@
       `).join("");
     }
 
-    // Initialize tags on load
+    // Initialize tags on load (instant synchronous render + optional background revalidation)
     async function initFilterTags() {
+      // Available tags already prepared synchronously, render right away without any network blocking
+      renderFilterTags();
+
+      // Background revalidation (silent, updates only if keywords changed in settings)
       try {
         const res = await fetch("/api/settings");
         if (res.ok) {
           const data = await res.json();
           if (data.keywords && data.keywords.length > 0) {
-            defaultKeywords = [...data.keywords];
+            const newKeywords = [...data.keywords];
+            const isDifferent = JSON.stringify(newKeywords) !== JSON.stringify(defaultKeywords);
+            if (isDifferent) {
+              defaultKeywords = newKeywords;
+              const domTags = collectTagsFromDOM();
+              const combined = dedupeTagsCaseInsensitive(defaultKeywords, domTags);
+              availableTags = combined.length > 0 ? combined : dedupeTagsCaseInsensitive(defaultKeywords);
+              renderFilterTags();
+            }
           }
         }
       } catch (e) {
-        console.warn("Could not fetch settings:", e);
+        console.warn("Could not revalidate settings:", e);
       }
-
-      const domTags = collectTagsFromDOM();
-      const combined = dedupeTagsCaseInsensitive(defaultKeywords, domTags);
-      availableTags = combined.length > 0 ? combined : dedupeTagsCaseInsensitive(defaultKeywords);
-
-      renderFilterTags();
     }
 
     // Client-side Process Selected News (No page reload)

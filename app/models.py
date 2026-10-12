@@ -74,10 +74,9 @@ ALLOWED_AI_MODELS = [
     "gemini-3.8-flash",
     "gemini-3.7-flash",
     "gemini-3.6-flash",
-    "gemini-3.5-flash",
     "gemini-3.5-flash-lite",
 ]
-DEFAULT_AI_MODEL = "gemini-3.5-flash"
+DEFAULT_AI_MODEL = "gemini-3.6-flash"
 
 
 class StoryTransformRequest(BaseModel):

@@ -5,99 +5,123 @@
 #}
 {% set active_step = current_step if current_step is defined else 1 %}
 
-<div id="pipelineStepperCard" class="w-full bg-white rounded-xl border border-stone-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.02)] px-4 py-3.5 sm:px-6 sm:py-4 mb-6 transition-all">
-  <!-- Stepper Top Bar Track & Nodes -->
-  <div class="relative w-full">
-    <!-- Progress Line Track Container (Strictly bounded between Node 1 center at 10% and Node 5 center at 90%) -->
-    <div class="absolute top-4 sm:top-4.5 left-[10%] right-[10%] h-[2px] -translate-y-1/2 z-0 pointer-events-none">
-      <!-- Background Track -->
-      <div class="w-full h-full bg-stone-200"></div>
-      <!-- Dynamic Active Progress Bar Fill -->
-      <div id="stepperProgressLine" class="progress-bar-fill absolute top-0 left-0 h-full bg-stone-900 transition-all duration-300" style="width: {{ ((active_step - 1) / 4) * 100 }}%;"></div>
-    </div>
+<!-- Stepper Outer Wrapper with Floating Pill Toggle -->
+<div id="pipelineStepperWrapper" class="relative w-full mb-6">
+  <!-- Floating Minimal Pill Button (Always visible on top-right, shows current stage & toggle arrow) -->
+  <div class="flex justify-end mb-2">
+    <button 
+      type="button" 
+      id="stepperToggleBtn" 
+      onclick="toggleStepperCollapse()" 
+      class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-stone-50 border border-stone-200/90 rounded-full shadow-2xs text-[11px] font-mono text-stone-600 hover:text-stone-900 transition-all cursor-pointer"
+      title="Toggle Progress Step Bar"
+    >
+      <span class="w-1.5 h-1.5 rounded-full bg-stone-900 animate-pulse"></span>
+      <span id="stepperToggleStepLabel" class="font-medium">Step {{ active_step }}/5</span>
+      <!-- Chevron Icon (Flips when collapsed vs expanded) -->
+      <svg id="stepperToggleIcon" class="w-3.5 h-3.5 text-stone-500 transition-transform duration-300" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+      </svg>
+    </button>
+  </div>
 
-    <!-- Stepper Nodes Grid (5 Steps) -->
-    <div class="relative z-10 grid grid-cols-5 gap-1 sm:gap-2">
+  <!-- Collapsible Container for Stepper Card -->
+  <div id="pipelineStepperCollapseContainer" class="overflow-hidden transition-all duration-500 ease-in-out">
+    <div id="pipelineStepperCard" class="w-full bg-white rounded-xl border border-stone-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.02)] px-4 py-3.5 sm:px-6 sm:py-4 transition-all">
+      <!-- Stepper Top Bar Track & Nodes -->
+      <div class="relative w-full">
+        <!-- Progress Line Track Container (Strictly bounded between Node 1 center at 10% and Node 5 center at 90%) -->
+        <div class="absolute top-4 sm:top-4.5 left-[10%] right-[10%] h-[2px] -translate-y-1/2 z-0 pointer-events-none">
+          <!-- Background Track -->
+          <div class="w-full h-full bg-stone-200"></div>
+          <!-- Dynamic Active Progress Bar Fill -->
+          <div id="stepperProgressLine" class="progress-bar-fill absolute top-0 left-0 h-full bg-stone-900 transition-all duration-300" style="width: {{ ((active_step - 1) / 4) * 100 }}%;"></div>
+        </div>
 
-      <!-- STEP 1: CRAWL -->
-      <button type="button" onclick="handleStepperNavigation(1)" class="group flex flex-col items-center focus:outline-none cursor-pointer" id="stepper-node-1" title="Stage 1: Crawl Source Scraper">
-        <div id="stepper-circle-1" class="step-transition w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-mono font-medium text-xs sm:text-sm border {% if active_step > 1 %}bg-stone-900 border-stone-900 text-white{% elif active_step == 1 %}bg-stone-900 border-stone-900 text-white ring-4 ring-stone-100{% else %}bg-white border-stone-300 text-stone-500 group-hover:border-stone-400{% endif %}">
-          {% if active_step > 1 %}
-            <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
-          {% else %}
-            <span>1</span>
-          {% endif %}
-        </div>
-        <div class="mt-2 flex flex-col items-center">
-          <span id="stepper-title-1" class="text-[11px] sm:text-xs font-semibold {% if active_step >= 1 %}text-stone-900{% else %}text-stone-400{% endif %} tracking-tight transition-colors">Crawl</span>
-          <span class="text-[10px] text-stone-400 hidden md:inline font-normal">Source Scraper</span>
-        </div>
-      </button>
+        <!-- Stepper Nodes Grid (5 Steps) -->
+        <div class="relative z-10 grid grid-cols-5 gap-1 sm:gap-2">
 
-      <!-- STEP 2: CURATE -->
-      <button type="button" onclick="handleStepperNavigation(2)" class="group flex flex-col items-center focus:outline-none cursor-pointer" id="stepper-node-2" title="Stage 2: Curate Filter & Validate">
-        <div id="stepper-circle-2" class="step-transition w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-mono font-medium text-xs sm:text-sm border {% if active_step > 2 %}bg-stone-900 border-stone-900 text-white{% elif active_step == 2 %}bg-stone-900 border-stone-900 text-white ring-4 ring-stone-100{% else %}bg-white border-stone-300 text-stone-500 group-hover:border-stone-400{% endif %}">
-          {% if active_step > 2 %}
-            <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
-          {% else %}
-            <span>2</span>
-          {% endif %}
-        </div>
-        <div class="mt-2 flex flex-col items-center">
-          <span id="stepper-title-2" class="text-[11px] sm:text-xs font-semibold {% if active_step == 2 %}text-stone-900 font-bold{% elif active_step > 2 %}text-stone-800{% else %}text-stone-400{% endif %} tracking-tight transition-colors">Curate</span>
-          <span class="text-[10px] text-stone-400 hidden md:inline font-normal">Filter & Select</span>
-        </div>
-      </button>
+          <!-- STEP 1: CRAWL -->
+          <button type="button" onclick="handleStepperNavigation(1)" class="group flex flex-col items-center focus:outline-none cursor-pointer" id="stepper-node-1" title="Stage 1: Crawl Source Scraper">
+            <div id="stepper-circle-1" class="step-transition w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-mono font-medium text-xs sm:text-sm border {% if active_step > 1 %}bg-stone-900 border-stone-900 text-white{% elif active_step == 1 %}bg-stone-900 border-stone-900 text-white ring-4 ring-stone-100{% else %}bg-white border-stone-300 text-stone-500 group-hover:border-stone-400{% endif %}">
+              {% if active_step > 1 %}
+                <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              {% else %}
+                <span>1</span>
+              {% endif %}
+            </div>
+            <div class="mt-2 flex flex-col items-center">
+              <span id="stepper-title-1" class="text-[11px] sm:text-xs font-semibold {% if active_step >= 1 %}text-stone-900{% else %}text-stone-400{% endif %} tracking-tight transition-colors">Crawl</span>
+              <span class="text-[10px] text-stone-400 hidden md:inline font-normal">Source Scraper</span>
+            </div>
+          </button>
 
-      <!-- STEP 3: CREATE -->
-      <button type="button" onclick="handleStepperNavigation(3)" class="group flex flex-col items-center focus:outline-none cursor-pointer" id="stepper-node-3" title="Stage 3: Create Draft & Headline">
-        <div id="stepper-circle-3" class="step-transition w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-mono font-medium text-xs sm:text-sm border {% if active_step > 3 %}bg-stone-900 border-stone-900 text-white{% elif active_step == 3 %}bg-stone-900 border-stone-900 text-white ring-4 ring-stone-100{% else %}bg-white border-stone-300 text-stone-500 group-hover:border-stone-400{% endif %}">
-          {% if active_step > 3 %}
-            <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
-          {% else %}
-            <span>3</span>
-          {% endif %}
-        </div>
-        <div class="mt-2 flex flex-col items-center">
-          <span id="stepper-title-3" class="text-[11px] sm:text-xs font-semibold {% if active_step == 3 %}text-stone-900 font-bold{% elif active_step > 3 %}text-stone-800{% else %}text-stone-400{% endif %} tracking-tight transition-colors">Create</span>
-          <span class="text-[10px] text-stone-400 hidden md:inline font-normal">Draft Story</span>
-        </div>
-      </button>
+          <!-- STEP 2: CURATE -->
+          <button type="button" onclick="handleStepperNavigation(2)" class="group flex flex-col items-center focus:outline-none cursor-pointer" id="stepper-node-2" title="Stage 2: Curate Filter & Validate">
+            <div id="stepper-circle-2" class="step-transition w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-mono font-medium text-xs sm:text-sm border {% if active_step > 2 %}bg-stone-900 border-stone-900 text-white{% elif active_step == 2 %}bg-stone-900 border-stone-900 text-white ring-4 ring-stone-100{% else %}bg-white border-stone-300 text-stone-500 group-hover:border-stone-400{% endif %}">
+              {% if active_step > 2 %}
+                <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              {% else %}
+                <span>2</span>
+              {% endif %}
+            </div>
+            <div class="mt-2 flex flex-col items-center">
+              <span id="stepper-title-2" class="text-[11px] sm:text-xs font-semibold {% if active_step == 2 %}text-stone-900 font-bold{% elif active_step > 2 %}text-stone-800{% else %}text-stone-400{% endif %} tracking-tight transition-colors">Curate</span>
+              <span class="text-[10px] text-stone-400 hidden md:inline font-normal">Filter & Select</span>
+            </div>
+          </button>
 
-      <!-- STEP 4: ILLUSTRATE -->
-      <button type="button" onclick="handleStepperNavigation(4)" class="group flex flex-col items-center focus:outline-none cursor-pointer" id="stepper-node-4" title="Stage 4: Illustrate Media Generation">
-        <div id="stepper-circle-4" class="step-transition w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-mono font-medium text-xs sm:text-sm border {% if active_step > 4 %}bg-stone-900 border-stone-900 text-white{% elif active_step == 4 %}bg-stone-900 border-stone-900 text-white ring-4 ring-stone-100{% else %}bg-white border-stone-300 text-stone-500 group-hover:border-stone-400{% endif %}">
-          {% if active_step > 4 %}
-            <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
-          {% else %}
-            <span>4</span>
-          {% endif %}
-        </div>
-        <div class="mt-2 flex flex-col items-center">
-          <span id="stepper-title-4" class="text-[11px] sm:text-xs font-semibold {% if active_step == 4 %}text-stone-900 font-bold{% elif active_step > 4 %}text-stone-800{% else %}text-stone-400{% endif %} tracking-tight transition-colors">Illustrate</span>
-          <span class="text-[10px] text-stone-400 hidden md:inline font-normal">Media Generation</span>
-        </div>
-      </button>
+          <!-- STEP 3: CREATE -->
+          <button type="button" onclick="handleStepperNavigation(3)" class="group flex flex-col items-center focus:outline-none cursor-pointer" id="stepper-node-3" title="Stage 3: Create Draft & Headline">
+            <div id="stepper-circle-3" class="step-transition w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-mono font-medium text-xs sm:text-sm border {% if active_step > 3 %}bg-stone-900 border-stone-900 text-white{% elif active_step == 3 %}bg-stone-900 border-stone-900 text-white ring-4 ring-stone-100{% else %}bg-white border-stone-300 text-stone-500 group-hover:border-stone-400{% endif %}">
+              {% if active_step > 3 %}
+                <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              {% else %}
+                <span>3</span>
+              {% endif %}
+            </div>
+            <div class="mt-2 flex flex-col items-center">
+              <span id="stepper-title-3" class="text-[11px] sm:text-xs font-semibold {% if active_step == 3 %}text-stone-900 font-bold{% elif active_step > 3 %}text-stone-800{% else %}text-stone-400{% endif %} tracking-tight transition-colors">Create</span>
+              <span class="text-[10px] text-stone-400 hidden md:inline font-normal">Draft Story</span>
+            </div>
+          </button>
 
-      <!-- STEP 5: PUBLISH -->
-      <button type="button" onclick="handleStepperNavigation(5)" class="group flex flex-col items-center focus:outline-none cursor-pointer" id="stepper-node-5" title="Stage 5: Publish Distribution">
-        <div id="stepper-circle-5" class="step-transition w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-mono font-medium text-xs sm:text-sm border {% if active_step == 5 %}bg-stone-900 border-stone-900 text-white ring-4 ring-stone-100{% else %}bg-white border-stone-300 text-stone-500 group-hover:border-stone-400{% endif %}">
-          <span>5</span>
-        </div>
-        <div class="mt-2 flex flex-col items-center">
-          <span id="stepper-title-5" class="text-[11px] sm:text-xs font-semibold {% if active_step == 5 %}text-stone-900 font-bold{% else %}text-stone-400{% endif %} tracking-tight transition-colors">Publish</span>
-          <span class="text-[10px] text-stone-400 hidden md:inline font-normal">Distribution</span>
-        </div>
-      </button>
+          <!-- STEP 4: ILLUSTRATE -->
+          <button type="button" onclick="handleStepperNavigation(4)" class="group flex flex-col items-center focus:outline-none cursor-pointer" id="stepper-node-4" title="Stage 4: Illustrate Media Generation">
+            <div id="stepper-circle-4" class="step-transition w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-mono font-medium text-xs sm:text-sm border {% if active_step > 4 %}bg-stone-900 border-stone-900 text-white{% elif active_step == 4 %}bg-stone-900 border-stone-900 text-white ring-4 ring-stone-100{% else %}bg-white border-stone-300 text-stone-500 group-hover:border-stone-400{% endif %}">
+              {% if active_step > 4 %}
+                <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              {% else %}
+                <span>4</span>
+              {% endif %}
+            </div>
+            <div class="mt-2 flex flex-col items-center">
+              <span id="stepper-title-4" class="text-[11px] sm:text-xs font-semibold {% if active_step == 4 %}text-stone-900 font-bold{% elif active_step > 4 %}text-stone-800{% else %}text-stone-400{% endif %} tracking-tight transition-colors">Illustrate</span>
+              <span class="text-[10px] text-stone-400 hidden md:inline font-normal">Media Generation</span>
+            </div>
+          </button>
 
+          <!-- STEP 5: PUBLISH -->
+          <button type="button" onclick="handleStepperNavigation(5)" class="group flex flex-col items-center focus:outline-none cursor-pointer" id="stepper-node-5" title="Stage 5: Publish Distribution">
+            <div id="stepper-circle-5" class="step-transition w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-mono font-medium text-xs sm:text-sm border {% if active_step == 5 %}bg-stone-900 border-stone-900 text-white ring-4 ring-stone-100{% else %}bg-white border-stone-300 text-stone-500 group-hover:border-stone-400{% endif %}">
+              <span>5</span>
+            </div>
+            <div class="mt-2 flex flex-col items-center">
+              <span id="stepper-title-5" class="text-[11px] sm:text-xs font-semibold {% if active_step == 5 %}text-stone-900 font-bold{% else %}text-stone-400{% endif %} tracking-tight transition-colors">Publish</span>
+              <span class="text-[10px] text-stone-400 hidden md:inline font-normal">Distribution</span>
+            </div>
+          </button>
+
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -180,6 +204,9 @@
       }
     }
 
+    const toggleLabel = document.getElementById('stepperToggleStepLabel');
+    if (toggleLabel) toggleLabel.innerText = `Step ${step}/5`;
+
     const cfg = pipelineStepsConfig[step - 1];
     const counterLabel = document.getElementById('stepperCounterLabel');
     if (counterLabel) counterLabel.innerText = `STEP ${cfg.number} OF 5`;
@@ -220,9 +247,11 @@
       }
     } else if (targetStep === 2) {
       if (window.location.pathname !== "/") {
-        window.location.href = "/";
+        window.location.href = "/?step=2";
       } else {
         updateStepperVisuals(2);
+        expandStepper(30);
+        // Activate filter if not already active
         if (typeof toggleMainFilter === 'function' && !isMainFilterActive) {
           toggleMainFilter();
         }
@@ -285,4 +314,119 @@
       window.location.href = "/";
     }
   }
+
+  // ==========================================
+  // AUTO-COLLAPSE (30s) & MANUAL EXPAND ENGINE
+  // ==========================================
+  let stepperAutoCollapseTimer = null;
+  let isStepperCollapsed = false;
+
+  function collapseStepper() {
+    const container = document.getElementById('pipelineStepperCollapseContainer');
+    const icon = document.getElementById('stepperToggleIcon');
+    const btn = document.getElementById('stepperToggleBtn');
+    if (!container) return;
+
+    // Set height to 0 with opacity fade
+    container.style.maxHeight = '0px';
+    container.style.opacity = '0';
+    container.style.pointerEvents = 'none';
+    isStepperCollapsed = true;
+
+    if (icon) {
+      // Rotate chevron to point down (indicate click to expand)
+      icon.style.transform = 'rotate(0deg)';
+    }
+    if (btn) {
+      btn.title = "Click to expand Progress Step Bar";
+    }
+
+    if (stepperAutoCollapseTimer) {
+      clearTimeout(stepperAutoCollapseTimer);
+      stepperAutoCollapseTimer = null;
+    }
+  }
+
+  function expandStepper(autoCollapseAfterSeconds = 30) {
+    const container = document.getElementById('pipelineStepperCollapseContainer');
+    const icon = document.getElementById('stepperToggleIcon');
+    const btn = document.getElementById('stepperToggleBtn');
+    if (!container) return;
+
+    // Expand to scroll height or generous limit
+    container.style.maxHeight = '300px';
+    container.style.opacity = '1';
+    container.style.pointerEvents = 'auto';
+    isStepperCollapsed = false;
+
+    if (icon) {
+      // Rotate chevron to point up (indicate click to collapse)
+      icon.style.transform = 'rotate(180deg)';
+    }
+    if (btn) {
+      btn.title = "Click to collapse Progress Step Bar";
+    }
+
+    // Clear any previous timer
+    if (stepperAutoCollapseTimer) {
+      clearTimeout(stepperAutoCollapseTimer);
+      stepperAutoCollapseTimer = null;
+    }
+
+    // Schedule auto-collapse after specified seconds
+    if (autoCollapseAfterSeconds && autoCollapseAfterSeconds > 0) {
+      stepperAutoCollapseTimer = setTimeout(() => {
+        collapseStepper();
+      }, autoCollapseAfterSeconds * 1000);
+    }
+  }
+
+  function toggleStepperCollapse() {
+    if (isStepperCollapsed) {
+      expandStepper(30);
+    } else {
+      collapseStepper();
+    }
+  }
+
+  // Start auto-collapse countdown when entering a new page
+  document.addEventListener("DOMContentLoaded", () => {
+    // Initial state: expanded with full visibility and up-pointing chevron
+    const icon = document.getElementById('stepperToggleIcon');
+    if (icon) {
+      icon.style.transform = 'rotate(180deg)';
+    }
+    const container = document.getElementById('pipelineStepperCollapseContainer');
+    if (container) {
+      container.style.maxHeight = '300px';
+      container.style.opacity = '1';
+    }
+
+    // Check URL parameters for explicit step target (e.g. /?step=2)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramStep = parseInt(urlParams.get('step'), 10);
+      if (paramStep >= 1 && paramStep <= 5) {
+        updateStepperVisuals(paramStep);
+        if (paramStep === 2) {
+          // Immediately activate curation filter without artificial delay
+          if (typeof toggleMainFilter === 'function' && !isMainFilterActive) {
+            toggleMainFilter();
+          } else {
+            // In case script executed before toggleMainFilter is registered
+            queueMicrotask(() => {
+              if (typeof toggleMainFilter === 'function' && !isMainFilterActive) {
+                toggleMainFilter();
+              }
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Error parsing URL step parameter:", e);
+    }
+
+    // Visible for 30s upon transition into the page, then collapse
+    expandStepper(30);
+  });
 </script>

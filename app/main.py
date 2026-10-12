@@ -258,10 +258,11 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 @app.get("/", response_class=HTMLResponse)
 async def home_page(request: Request):
     news = load_news_data()
+    settings = load_settings()
     return templates.TemplateResponse(
         request=request,
         name="home.html",
-        context={"news": news}
+        context={"news": news, "settings": settings}
     )
 
 @app.get("/setting", response_class=HTMLResponse)
@@ -285,7 +286,8 @@ async def crawl_news(request: Request):
         context={
             "news": crawl_result["news"],
             "crawl_stats": crawl_result["stats"],
-            "status_msg": "Crawled and refreshed news sources!"
+            "status_msg": "Crawled and refreshed news sources!",
+            "settings": settings
         }
     )
 
@@ -313,7 +315,8 @@ async def filter_news(request: Request):
         context={
             "news": filtered,
             "status_msg": status_msg,
-            "is_filtered": True
+            "is_filtered": True,
+            "settings": settings
         }
     )
 
