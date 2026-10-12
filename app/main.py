@@ -793,14 +793,20 @@ Respond with ONLY a JSON object containing the transformed "heading", "subheadin
     selected_model = requested_model if requested_model in ALLOWED_AI_MODELS else DEFAULT_AI_MODEL
 
     try:
+        from google.genai import types
+
+        config = types.GenerateContentConfig(
+            system_instruction=TRANSFORM_SYSTEM_PROMPT,
+            temperature=0.7,
+            max_output_tokens=8192,
+            response_mime_type="application/json",
+            automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
+        )
+
         response = gemini_client.models.generate_content(
             model=selected_model,
             contents=contents,
-            config={
-                "system_instruction": TRANSFORM_SYSTEM_PROMPT,
-                "temperature": 0.7,
-                "max_output_tokens": 8192,
-            }
+            config=config
         )
 
         response_text = response.text.strip()
