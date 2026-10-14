@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#FBFBFA]">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saved Stories — Media Agent</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans, Newsreader, Noto Naskh Arabic & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            serif: ['Newsreader', 'Georgia', 'serif'],
+            arabic: ['"Noto Naskh Arabic"', 'Tahoma', 'serif'],
+            mono: ['"JetBrains Mono"', 'Menlo', 'Monaco', 'monospace']
+          },
+          colors: {
+            paper: '#FBFBFA',
+            ink: '#121316',
+            inkMuted: '#54575E'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-editorial {
+      font-family: 'Newsreader', Georgia, serif;
+    }
+    .font-rtl-arabic {
+      font-family: 'Noto Naskh Arabic', 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .line-clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="min-h-full bg-[#FBFBFA] text-[#121316] antialiased selection:bg-stone-200 flex flex-col">
+
+  <!-- TOP NAVIGATION BAR (STICKY AT TOP) -->
+  <nav class="sticky top-0 z-50 bg-[#FBFBFA]/95 backdrop-blur-md border-b border-stone-200">
+    <div class="max-w-6xl mx-auto px-4 sm:px-8 h-14 flex items-center justify-between">
+      <!-- Brand / Logo -->
+      <a href="/" class="flex items-center gap-2.5 text-stone-900 hover:text-stone-700 transition-colors">
+        <div class="w-7 h-7 rounded-lg bg-stone-900 flex items-center justify-center text-white shadow-2xs">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/>
+            <path d="M18 14h-8"/>
+            <path d="M15 18h-5"/>
+            <path d="M10 6h8v4h-8V6Z"/>
+          </svg>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="font-bold text-base tracking-tight text-stone-900">Media Agent</span>
+        </div>
+      </a>
+
+      <!-- Navigation Tabs -->
+      <div class="flex items-center gap-2">
+        <a 
+          href="/" 
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/80 transition shadow-2xs"
+          title="Headlines"
+        >
+          <svg class="w-3.5 h-3.5 text-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span>Headlines</span>
+        </a>
+
+        <a 
+          href="/story" 
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/80 transition shadow-2xs"
+          title="Story Workspace"
+        >
+          <svg class="w-3.5 h-3.5 text-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+          </svg>
+          <span>Story</span>
+        </a>
+
+        <a 
+          href="/saved" 
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-900 text-white shadow-2xs"
+          title="Saved Stories Archive"
+        >
+          <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>Saved Stories</span>
+        </a>
+
+        <a 
+          href="/setting" 
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/80 transition shadow-2xs"
+          title="Configuration Settings"
+        >
+          <svg class="w-3.5 h-3.5 text-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span>Setting</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- EDITORIAL MASTHEAD & SUB-HEADER -->
+  <header class="bg-white border-b border-stone-200/90 py-6 sm:py-8 shadow-2xs">
+    <div class="max-w-6xl mx-auto px-4 sm:px-8">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest font-semibold bg-stone-100 text-stone-700 border border-stone-200">
+              Editorial Edition
+            </span>
+            <span class="text-xs text-stone-400 font-mono" id="currentDateStr"></span>
+          </div>
+          <h1 class="font-editorial text-3xl sm:text-4xl lg:text-[42px] font-bold text-stone-900 tracking-tight leading-tight">
+            Saved Stories Desk
+          </h1>
+          <p class="text-xs sm:text-sm text-stone-500 mt-1 max-w-xl">
+            Published, transformed, and curated dispatch archive — inspired by the news layouts of Dawn & The Express Tribune.
+          </p>
+        </div>
+
+        <!-- Search / Filter & Count Badges -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          <div class="relative">
+            <input 
+              type="text" 
+              id="storySearchInput" 
+              oninput="filterSavedStories(this.value)" 
+              placeholder="Search headline, source, byline..." 
+              class="w-56 sm:w-64 bg-stone-50 border border-stone-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-500 focus:bg-white shadow-2xs transition"
+            />
+            <svg class="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </div>
+
+          <span class="inline-flex items-center px-2.5 py-1 rounded-lg border border-stone-200 bg-stone-50 text-xs font-mono text-stone-700 shadow-2xs">
+            <span id="savedCountNum" class="font-bold text-stone-900 mr-1">{{ stories|length }}</span> stories
+          </span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN MAGAZINE CONTAINER -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-10 flex-1 w-full">
+    
+    <!-- EMPTY STATE -->
+    <div id="emptySavedNotice" class="{% if stories|length > 0 %}hidden{% endif %} bg-white rounded-xl border border-stone-200/90 shadow-2xs p-12 text-center max-w-md mx-auto my-12">
+      <div class="w-12 h-12 rounded-xl bg-stone-100 flex items-center justify-center mx-auto mb-4 text-stone-400">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+        </svg>
+      </div>
+      <h2 class="font-editorial text-xl font-bold text-stone-900 mb-1.5">No Saved Stories Yet</h2>
+      <p class="text-xs text-stone-500 leading-relaxed mb-6">
+        Stories you edit and click <strong class="text-stone-800">Save Story</strong> on will automatically appear here in this publication magazine.
+      </p>
+      <a 
+        href="/story" 
+        class="inline-flex items-center gap-1.5 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-medium rounded-lg transition shadow-2xs"
+      >
+        <span>Open Story Studio</span>
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+          <polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </a>
+    </div>
+
+    <!-- 3-COLUMN EDITORIAL MAGAZINE GRID -->
+    <div id="savedStoriesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7 items-stretch">
+      {% for story in stories %}
+      {% set title = story.heading or story.headline or "Untitled Story" %}
+      {% set is_rtl = story.source_language == 'ur' or story.source_language == 'ar' %}
+      <article 
+        class="saved-story-card group bg-white rounded-xl border border-stone-200/90 hover:border-stone-400/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden relative"
+        data-index="{{ loop.index0 }}"
+        data-headline="{{ title }}"
+        data-source="{{ story.sitename or story.author or '' }}"
+        data-author="{{ story.author or '' }}"
+      >
+        <!-- Story Thumbnail Image (16:9 Aspect Ratio) -->
+        <div 
+          class="relative w-full aspect-[16/9] bg-stone-100 overflow-hidden cursor-pointer shrink-0" 
+          onclick="openReaderModal({{ loop.index0 }})"
+        >
+          {% set card_img = story.image %}
+          {% if not card_img and story.blocks %}
+            {% for b in story.blocks %}
+              {% if not card_img and b.type == 'image' and b.url %}
+                {% set card_img = b.url %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+          {% if card_img and card_img.strip() %}
+          <img 
+            src="{{ card_img }}" 
+            alt="{{ title }}" 
+            loading="lazy" 
+            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            onerror="this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center text-stone-300 font-mono text-xs\'>Headline Dispatch</div>'"
+          />
+          {% else %}
+          <div class="w-full h-full bg-stone-100 flex items-center justify-center text-stone-300">
+            <svg class="w-8 h-8 opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </div>
+          {% endif %}
+
+          <!-- Wire / Source Badge Overlay on Top-Left -->
+          <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-stone-900/85 backdrop-blur-xs text-white shadow-2xs">
+              {{ story.sitename or "Wire Dispatch" }}
+            </span>
+          </div>
+
+          <!-- Language Badge on Top-Right -->
+          {% if story.source_language %}
+          <div class="absolute top-2.5 right-2.5">
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-medium uppercase bg-white/90 backdrop-blur-xs text-stone-700 border border-stone-200 shadow-2xs">
+              {{ story.source_language }}
+            </span>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Card Body Content -->
+        <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
+          <div>
+            <!-- Headline -->
+            <h2 
+              class="font-editorial text-lg sm:text-[19px] font-bold text-stone-900 leading-snug tracking-tight mb-2 group-hover:text-stone-700 transition-colors cursor-pointer line-clamp-2 {% if is_rtl %}text-right font-rtl-arabic [direction:rtl]{% endif %}"
+              onclick="openReaderModal({{ loop.index0 }})"
+              title="{{ title }}"
+            >
+              {{ title }}
+            </h2>
+
+            <!-- Subheading / Excerpt Preview -->
+            {% set excerpt = story.subheading or story.summary or story.content or "" %}
+            {% if excerpt %}
+            <p class="text-xs text-stone-600 leading-relaxed mb-4 line-clamp-3 {% if is_rtl %}text-right font-rtl-arabic [direction:rtl]{% endif %}">
+              {{ excerpt[:240] }}
+            </p>
+            {% endif %}
+          </div>
+
+          <!-- Bottom Metadata Dateline & Action Bar -->
+          <div class="pt-3.5 border-t border-stone-100 mt-auto">
+            <div class="flex items-center justify-between text-[11px] text-stone-500 font-mono mb-3">
+              <span class="truncate max-w-[140px]" title="{{ story.author or 'Staff' }}">
+                By {{ story.author or "Staff Reporter" }}
+              </span>
+              <span class="text-stone-400 shrink-0">
+                {{ story.date or "Recent" }}
+              </span>
+            </div>
+
+            <!-- Card Action Buttons -->
+            <div class="flex items-center justify-between gap-1.5 pt-1">
+              <div class="flex items-center gap-1.5">
+                <!-- Read Full Button (Opens Modal) -->
+                <button 
+                  type="button" 
+                  onclick="openReaderModal({{ loop.index0 }})"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 bg-stone-100 hover:bg-stone-200 text-stone-800 text-[11px] font-medium rounded-md transition cursor-pointer"
+                  title="Read full article"
+                >
+                  <svg class="w-3 h-3 text-stone-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                  </svg>
+                  <span>Read</span>
+                </button>
+
+                <!-- Edit in Story Studio -->
+                <a 
+                  href="/story?saved_index={{ loop.index0 }}"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 text-[11px] font-medium rounded-md transition shadow-2xs"
+                  title="Open in Story Studio editor"
+                >
+                  <svg class="w-3 h-3 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                  </svg>
+                  <span>Edit</span>
+                </a>
+              </div>
+
+              <div class="flex items-center gap-1">
+                <!-- External Source Wire Link -->
+                {% if story.url %}
+                <a 
+                  href="{{ story.url }}" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class="p-1 text-stone-400 hover:text-stone-800 hover:bg-stone-100 rounded transition"
+                  title="Open source URL"
+                >
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                    <polyline points="15 3 21 3 21 9"/>
+                    <line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                </a>
+                {% endif %}
+
+                <!-- Delete from Saved -->
+                <button 
+                  type="button" 
+                  onclick="deleteSavedStory({{ loop.index0 }})"
+                  class="p-1 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded transition cursor-pointer"
+                  title="Remove from saved stories"
+                >
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    <!-- NO SEARCH MATCH NOTICE -->
+    <div id="noSearchMatchNotice" class="hidden bg-white rounded-xl border border-stone-200/90 p-10 text-center my-8">
+      <p class="text-sm font-medium text-stone-800">No saved stories match your search query</p>
+      <p class="text-xs text-stone-500 mt-1">Try searching by a different keyword or author name</p>
+    </div>
+  </main>
+
+  <!-- FULL ARTICLE READER MODAL OVERLAY -->
+  <div id="readerModalOverlay" class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs hidden flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="relative w-full max-w-3xl bg-white rounded-2xl border border-stone-200 shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col">
+      
+      <!-- Modal Top Bar -->
+      <div class="px-5 py-3.5 border-b border-stone-200 flex items-center justify-between bg-stone-50/80">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+          <span id="modalSourceBadge" class="text-xs font-mono font-bold uppercase tracking-wider text-stone-700"></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <a 
+            id="modalEditLink" 
+            href="#" 
+            class="inline-flex items-center gap-1 px-3 py-1 bg-white hover:bg-stone-100 text-stone-800 border border-stone-200 rounded-lg text-xs font-medium transition"
+          >
+            <span>Edit in Studio</span>
+          </a>
+          <button 
+            type="button" 
+            onclick="closeReaderModal()" 
+            class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 rounded-lg transition cursor-pointer"
+            title="Close"
+          >
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body (Scrollable Article) -->
+      <div class="p-6 sm:p-10 overflow-y-auto flex-1">
+        <!-- Headline -->
+        <h1 id="modalHeadline" class="font-editorial text-2xl sm:text-3xl lg:text-[34px] font-bold text-stone-900 leading-tight tracking-tight mb-3"></h1>
+        
+        <!-- Subheading -->
+        <p id="modalSubheading" class="text-sm sm:text-base text-stone-600 leading-relaxed font-editorial italic mb-5 pb-4 border-b border-stone-100"></p>
+
+        <!-- Byline Dateline Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-stone-500 mb-6 pb-4 border-b border-stone-100">
+          <div class="flex items-center gap-2">
+            <span>By <strong id="modalAuthor" class="text-stone-800"></strong></span>
+            <span>•</span>
+            <span id="modalDate"></span>
+          </div>
+          <span id="modalSavedAt" class="text-[11px] text-stone-400"></span>
+        </div>
+
+        <!-- Hero Image -->
+        <div id="modalImageContainer" class="mb-6 rounded-xl overflow-hidden bg-stone-100 hidden">
+          <img id="modalImage" src="" alt="Article visual" class="w-full max-h-[420px] object-cover" />
+          <p id="modalImageCaption" class="text-[11px] text-stone-500 font-mono p-2 bg-stone-50 border-t border-stone-100"></p>
+        </div>
+
+        <!-- Body Content -->
+        <div id="modalBodyContent" class="text-stone-800 text-sm sm:text-[15px] leading-relaxed space-y-4 font-normal"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT STATE & INTERACTIONS -->
+  <script>
+    const savedStoriesData = {{ stories | tojson }};
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Format current header date
+      const dateEl = document.getElementById("currentDateStr");
+      if (dateEl) {
+        const now = new Date();
+        dateEl.innerText = now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+      }
+
+      // Close modal on escape key
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeReaderModal();
+      });
+
+      // Close modal on click outside
+      const overlay = document.getElementById("readerModalOverlay");
+      if (overlay) {
+        overlay.addEventListener("click", (e) => {
+          if (e.target === overlay) closeReaderModal();
+        });
+      }
+    });
+
+    // Client-side search and filter
+    function filterSavedStories(query) {
+      const q = (query || "").trim().toLowerCase();
+      const cards = document.querySelectorAll(".saved-story-card");
+      let visibleCount = 0;
+
+      cards.forEach(card => {
+        const headline = (card.getAttribute("data-headline") || "").toLowerCase();
+        const source = (card.getAttribute("data-source") || "").toLowerCase();
+        const author = (card.getAttribute("data-author") || "").toLowerCase();
+
+        if (!q || headline.includes(q) || source.includes(q) || author.includes(q)) {
+          card.style.display = "";
+          visibleCount++;
+        } else {
+          card.style.display = "none";
+        }
+      });
+
+      const noMatch = document.getElementById("noSearchMatchNotice");
+      if (noMatch) {
+        if (visibleCount === 0 && cards.length > 0) {
+          noMatch.classList.remove("hidden");
+        } else {
+          noMatch.classList.add("hidden");
+        }
+      }
+    }
+
+    // Open Reader Modal
+    function openReaderModal(index) {
+      const story = savedStoriesData[index];
+      if (!story) return;
+
+      const overlay = document.getElementById("readerModalOverlay");
+      const headline = document.getElementById("modalHeadline");
+      const subheading = document.getElementById("modalSubheading");
+      const author = document.getElementById("modalAuthor");
+      const date = document.getElementById("modalDate");
+      const savedAt = document.getElementById("modalSavedAt");
+      const sourceBadge = document.getElementById("modalSourceBadge");
+      const imgContainer = document.getElementById("modalImageContainer");
+      const img = document.getElementById("modalImage");
+      const bodyContent = document.getElementById("modalBodyContent");
+      const editLink = document.getElementById("modalEditLink");
+
+      const title = story.heading || story.headline || "Untitled Story";
+      headline.innerText = title;
+      
+      const isRtl = story.source_language === "ur" || story.source_language === "ar";
+      if (isRtl) {
+        headline.className = "font-editorial text-2xl sm:text-3xl lg:text-[34px] font-bold text-stone-900 leading-tight tracking-tight mb-3 text-right font-rtl-arabic [direction:rtl]";
+      } else {
+        headline.className = "font-editorial text-2xl sm:text-3xl lg:text-[34px] font-bold text-stone-900 leading-tight tracking-tight mb-3";
+      }
+
+      const sub = story.subheading || story.summary || "";
+      if (sub) {
+        subheading.innerText = sub;
+        subheading.classList.remove("hidden");
+      } else {
+        subheading.classList.add("hidden");
+      }
+
+      author.innerText = story.author || "Staff Reporter";
+      date.innerText = story.date || "Recent Dispatch";
+      sourceBadge.innerText = story.sitename || "News Wire";
+      editLink.href = `/story?saved_index=${index}`;
+
+      if (story.saved_at) {
+        try {
+          const d = new Date(story.saved_at);
+          savedAt.innerText = "Saved: " + d.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+        } catch {
+          savedAt.innerText = "";
+        }
+      } else {
+        savedAt.innerText = "";
+      }
+
+      const resolvedModalImg = (story.image && story.image.trim()) 
+        ? story.image 
+        : (Array.isArray(story.blocks) ? (story.blocks.find(b => b && b.type === "image" && b.url && b.url.trim())?.url || "") : "");
+
+      if (resolvedModalImg) {
+        img.src = resolvedModalImg;
+        imgContainer.classList.remove("hidden");
+        const caption = document.getElementById("modalImageCaption");
+        if (caption) caption.innerText = story.sitename || "Photo wire coverage";
+      } else {
+        imgContainer.classList.add("hidden");
+      }
+
+      // Render body paragraphs
+      const rawBody = (story.content || story.body || "").trim();
+      if (rawBody) {
+        const paragraphs = rawBody.split(/\n\s*\n/).filter(p => p.trim());
+        bodyContent.innerHTML = paragraphs.map(p => {
+          return `<p class="${isRtl ? 'text-right font-rtl-arabic [direction:rtl]' : ''}">${escapeHtml(p)}</p>`;
+        }).join("");
+      } else {
+        bodyContent.innerHTML = `<p class="italic text-stone-400">No full content text provided for this story.</p>`;
+      }
+
+      overlay.classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeReaderModal() {
+      const overlay = document.getElementById("readerModalOverlay");
+      if (overlay) overlay.classList.add("hidden");
+      document.body.style.overflow = "";
+    }
+
+    // Delete Story from Saved Archive
+    async function deleteSavedStory(index) {
+      if (!confirm("Are you sure you want to remove this story from Saved Stories?")) return;
+
+      try {
+        const resp = await fetch(`/api/story/saved/${index}`, { method: "DELETE" });
+        if (resp.ok) {
+          window.location.reload();
+        } else {
+          const data = await resp.json().catch(() => ({}));
+          alert(data.detail || "Failed to delete saved story.");
+        }
+      } catch (e) {
+        alert("Network error deleting saved story: " + e.message);
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return "";
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>

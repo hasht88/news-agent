@@ -50,6 +50,7 @@ class StoryItem(BaseModel):
     source_language: str = ""
     tags: List[str] = Field(default_factory=list)
     blocks: List[Dict[str, Any]] = Field(default_factory=list)
+    saved_at: Optional[str] = None
 
 
 class StoryUpdateRequest(BaseModel):

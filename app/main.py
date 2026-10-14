@@ -1,4 +1,5 @@
 import re, os, json
+from datetime import datetime, timezone
 import httpx
 from bs4 import BeautifulSoup, SoupStrainer
 from fastapi import FastAPI, Request, HTTPException, Form, status, BackgroundTasks
@@ -31,6 +32,7 @@ else:
 
 DATA_FILE = DATA_DIR / "links.json"
 SELECTED_NEWS_FILE = DATA_DIR / "selected_news.json"
+SAVED_NEWS_FILE = DATA_DIR / "saved_news.json"
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 def ensure_data_dir():
@@ -388,9 +390,138 @@ def load_selected_news():
             print(f"Error loading selected news from file: {e}")
             return []
 
+def load_saved_news():
+    """Load previously saved stories from saved_news.json."""
+    if os.environ.get("VERCEL"):
+        if not is_blob_configured():
+            return []
+        try:
+            data = client.get("data/saved_news.json", access="private", use_cache=False)
+            return json.loads(data.content)
+        except Exception as e:
+            print(f"Error loading saved news from blob: {e}")
+            return []
+    else:
+        try:
+            ensure_data_dir()
+            if not SAVED_NEWS_FILE.exists():
+                return []
+            with open(SAVED_NEWS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading saved news from file: {e}")
+            return []
+
+def save_all_saved_news(saved_list: list[dict]):
+    """Persist the entire saved stories list to saved_news.json."""
+    ensure_data_dir()
+    if os.environ.get("VERCEL"):
+        if is_blob_configured():
+            try:
+                client.put(
+                    "data/saved_news.json",
+                    json.dumps(saved_list, ensure_ascii=False),
+                    access="private",
+                    content_type="application/json",
+                    overwrite=True,
+                    cache_control_max_age=0
+                )
+            except Exception as e:
+                print(f"Error saving saved news to blob: {e}")
+                raise HTTPException(status_code=500, detail="Failed to save stories to saved_news blob.")
+    else:
+        try:
+            with open(SAVED_NEWS_FILE, "w", encoding="utf-8") as f:
+                json.dump(saved_list, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Error saving saved news to file: {e}")
+            raise HTTPException(status_code=500, detail="Failed to save stories to saved_news file.")
+
+def save_to_saved_news(story_dict: dict):
+    """
+    Save or update a story in saved_news.json.
+    Matches existing story by URL (if present) or by heading.
+    Updates the existing story or appends as a new entry.
+    """
+    saved_list = load_saved_news()
+    story_copy = dict(story_dict)
+
+    # Set ISO timestamp
+    story_copy["saved_at"] = datetime.now(timezone.utc).isoformat()
+
+    # Backfill image from blocks if missing
+    if not (story_copy.get("image") or "").strip() and story_copy.get("blocks"):
+        for b in story_copy["blocks"]:
+            if isinstance(b, dict) and b.get("type") == "image" and (b.get("url") or "").strip():
+                story_copy["image"] = b["url"].strip()
+                break
+
+    story_url = (story_copy.get("url") or "").strip()
+    story_heading = (story_copy.get("heading") or story_copy.get("headline") or "").strip()
+
+    match_idx = -1
+    for idx, item in enumerate(saved_list):
+        item_url = (item.get("url") or "").strip()
+        item_heading = (item.get("heading") or item.get("headline") or "").strip()
+
+        # Match by URL if present, otherwise by heading
+        if story_url and item_url and story_url == item_url:
+            match_idx = idx
+            break
+        elif not story_url and story_heading and item_heading and story_heading == item_heading:
+            match_idx = idx
+            break
+
+    if match_idx >= 0:
+        saved_list[match_idx] = story_copy
+    else:
+        saved_list.append(story_copy)
+
+    save_all_saved_news(saved_list)
+    return story_copy
+
+@app.get("/saved", response_class=HTMLResponse)
+async def saved_stories_page(request: Request):
+    stories = load_saved_news()
+    return templates.TemplateResponse(
+        request=request,
+        name="saved_stories.html",
+        context={"stories": stories}
+    )
+
+@app.delete("/api/story/saved/{index}")
+async def delete_saved_story(index: int):
+    stories = load_saved_news()
+    if index < 0 or index >= len(stories):
+        raise HTTPException(status_code=404, detail="Saved story not found.")
+    removed = stories.pop(index)
+    save_all_saved_news(stories)
+    return {"status": "success", "message": "Saved story deleted.", "removed": removed}
+
 @app.get("/story", response_class=HTMLResponse)
 async def story_page(request: Request):
     stories = load_selected_news()
+    # Support loading a saved story into the active studio if requested via query param
+    saved_idx = request.query_params.get("saved_index")
+    if saved_idx is not None:
+        try:
+            s_idx = int(saved_idx)
+            saved_stories = load_saved_news()
+            if 0 <= s_idx < len(saved_stories):
+                chosen_saved = saved_stories[s_idx]
+                # Check if already present in stories by URL or heading
+                matched_in_selected = next(
+                    (i for i, s in enumerate(stories) 
+                     if (s.get("url") and s.get("url") == chosen_saved.get("url")) or 
+                        ((s.get("heading") or s.get("headline")) == (chosen_saved.get("heading") or chosen_saved.get("headline")))),
+                    None
+                )
+                if matched_in_selected is None:
+                    stories.insert(0, chosen_saved)
+                    save_raw_selected_news(stories)
+        except Exception as e:
+            print(f"Error loading saved story into studio: {e}")
+
     return templates.TemplateResponse(
         request=request,
         name="story.html",
@@ -461,7 +592,7 @@ async def update_story_item(payload: StoryUpdateRequest):
     updated_dict = payload.story.model_dump()
     stories[payload.index] = updated_dict
 
-    # Save back to storage
+    # 1. Update in selected_news.json
     ensure_data_dir()
     if os.environ.get("VERCEL"):
         if is_blob_configured():
@@ -485,7 +616,10 @@ async def update_story_item(payload: StoryUpdateRequest):
             print(f"Error updating selected news file: {e}")
             raise HTTPException(status_code=500, detail="Failed to save story to file.")
 
-    return {"status": "success", "message": "Story saved successfully!", "story": updated_dict}
+    # 2. Update/append in saved_news.json
+    saved_entry = save_to_saved_news(updated_dict)
+
+    return {"status": "success", "message": "Story saved successfully!", "story": saved_entry}
 
 @app.post("/api/story/save-all")
 async def save_all_stories(payload: StoryBatchSaveRequest):

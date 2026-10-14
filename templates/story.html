@@ -130,6 +130,17 @@
         </a>
 
         <a 
+          href="/saved" 
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/80 transition shadow-2xs"
+          title="Saved Stories Archive"
+        >
+          <svg class="w-3.5 h-3.5 text-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>Saved Stories</span>
+        </a>
+
+        <a 
           href="/setting" 
           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/80 transition shadow-2xs"
           title="Configuration Settings"
@@ -1118,7 +1129,13 @@
       current.content = document.getElementById("storyContent")?.value || "";
       current.author = document.getElementById("storyAuthor")?.value || "";
       current.date = document.getElementById("storyDate")?.value || "";
-      current.image = document.getElementById("storyImage")?.value || "";
+      const storyImgInput = document.getElementById("storyImage");
+      if (storyImgInput) {
+        current.image = storyImgInput.value || "";
+      } else if (!current.image && Array.isArray(current.blocks)) {
+        const firstImgBlock = current.blocks.find(b => b && b.type === "image" && b.url && b.url.trim());
+        if (firstImgBlock) current.image = firstImgBlock.url;
+      }
 
       // Realtime text direction adjustment for active edits
       const sLang = current.source_language || "";
@@ -1431,6 +1448,10 @@
 
       handleFieldInput();
       const storyToSave = stories[currentStoryIndex];
+      if ((!storyToSave.image || !storyToSave.image.trim()) && Array.isArray(storyToSave.blocks)) {
+        const firstImg = storyToSave.blocks.find(b => b && b.type === "image" && b.url && b.url.trim());
+        if (firstImg) storyToSave.image = firstImg.url;
+      }
 
       const saveBtn = document.getElementById("saveStoryBtn");
       const saveBtnText = document.getElementById("saveBtnText");
