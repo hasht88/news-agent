@@ -1,13 +1,44 @@
 import re, os, json
 from datetime import datetime, timezone
+from contextlib import asynccontextmanager
+from typing import Optional, List, Dict, Any
 import httpx
 from bs4 import BeautifulSoup, SoupStrainer
-from fastapi import FastAPI, Request, HTTPException, Form, status, BackgroundTasks
+from fastapi import FastAPI, Request, HTTPException, Form, status, BackgroundTasks, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
-from vercel.blob import BlobClient
 from urllib.parse import urljoin
+from curl_cffi import requests
+from collections import defaultdict
+from lingua import Language, LanguageDetectorBuilder
+from trafilatura import extract, extract_metadata
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import get_db, init_db, AsyncSessionLocal
+from app.db_models import User, UserSettings, UserSelectedStory, UserSavedStory, UserCrawledNews
+from app.auth import (
+    hash_password,
+    verify_password,
+    create_session_token,
+    get_current_user,
+    get_current_user_optional,
+    SESSION_COOKIE_NAME,
+    SESSION_MAX_AGE
+)
+from app.storage import (
+    get_default_settings,
+    get_user_settings,
+    save_user_settings,
+    get_user_crawled_news,
+    save_user_crawled_news,
+    get_user_selected_stories,
+    save_user_selected_stories,
+    get_user_saved_stories,
+    save_user_saved_story,
+    migrate_legacy_data_to_user
+)
 from app.models import (
     AgentSettings,
     StoryUpdateRequest,
@@ -18,31 +49,48 @@ from app.models import (
     ALLOWED_AI_MODELS,
     DEFAULT_AI_MODEL,
 )
-from app.storage import load_settings, save_settings, is_blob_configured
-from curl_cffi import requests
-from collections import defaultdict
-from lingua import Language, LanguageDetectorBuilder
-from trafilatura import extract, extract_metadata
 
-client = BlobClient()
-if os.environ.get("VERCEL"):
-    DATA_DIR = Path("data")
-else:
-    DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-
-DATA_FILE = DATA_DIR / "links.json"
-SELECTED_NEWS_FILE = DATA_DIR / "selected_news.json"
-SAVED_NEWS_FILE = DATA_DIR / "saved_news.json"
 BASE_DIR = Path(__file__).resolve().parent.parent
+INVITE_CODE_SECRET = os.environ.get("INVITE_CODE", "newsroom2026")
 
-def ensure_data_dir():
-    if not os.environ.get("VERCEL"):
-        DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
-def detect_lang(items):
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize database tables on startup
+    await init_db()
+    yield
+
+app = FastAPI(
+    title="News Curation Agent",
+    description="Configure Scope URLs, Track Keywords, Curate News and Compose Stories",
+    version="2.0.0",
+    lifespan=lifespan
+)
+
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+custom_headers = {
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
+    'Accept-Language': 'da, en-gb, en'
+}
+
+dawn_headers = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+    "Sec-Ch-Ua-Mobile": "?0",
+    "Sec-Ch-Ua-Platform": '"macOS"',
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
+}
+
+def detect_lang(items: list[dict], source_languages: list[str] = None):
     if not items:
         return items
-    settings = load_settings()
-    source_languages = settings.source_languages or []
+    source_languages = source_languages or ["English", "Urdu", "Arabic"]
     languages = []
     for lang in source_languages:
         lang_enum = getattr(Language, str(lang).upper(), None)
@@ -71,28 +119,6 @@ def detect_lang(items):
         item["source_language"] = detected_code
         items_lang.append(item)
     return items_lang
-app = FastAPI(
-    title="News Curation Agent",
-    description="Configure Scope URLs, Track Keywords and Curate News",
-    version="1.0.0"
-)
-
-custom_headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
-                  'Accept-Language': 'da, en-gb, en'}
-
-dawn_headers = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-"Accept-Language": "en-US,en;q=0.9",
-"Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-"Sec-Ch-Ua-Mobile": "?0",
-"Sec-Ch-Ua-Platform": '"macOS"',
-"Sec-Fetch-Dest": "document",
-"Sec-Fetch-Mode": "navigate",
-"Sec-Fetch-Site": "none",
-"Sec-Fetch-User": "?1",
-"Upgrade-Insecure-Requests": "1",
-}
 
 def merge_by_url(data):
     groups = defaultdict(list)
@@ -108,15 +134,40 @@ def merge_by_url(data):
 
         kept = []
         for h in seen:
-            contained = [other for other in seen if other != h and other in h]
-            if contained:
+            words = h.split()
+            if len(words) > 5 and len(words) % 2 == 0:
+                mid = len(words) // 2
+                first_half = " ".join(words[:mid])
+                second_half = " ".join(words[mid:])
+                if first_half == second_half:
+                    h = first_half
+
+            tokens = h.split()
+            overlap_found = False
+            for span in range(4, 15):
+                for i in range(len(tokens) - span * 2 + 1):
+                    phrase1 = " ".join(tokens[i:i + span])
+                    phrase2 = " ".join(tokens[i + span:i + span * 2])
+                    if phrase1 == phrase2 and len(phrase1) > 15:
+                        h = " ".join(tokens[:i + span] + tokens[i + span * 2:])
+                        overlap_found = True
+                        break
+                if overlap_found:
+                    break
+
+            if len(h) >= 60:
+                midpoint = len(h) // 2
+                search_start = max(0, midpoint - 20)
+                search_end = min(len(h), midpoint + 20)
+                window = h[search_start:search_end]
                 result = h
-                for sub in contained:
-                    idx = result.find(sub)
-                    if idx > 0:
-                        before = result[:idx]
-                        after = result[idx:]
-                        if not before.rstrip().endswith(('.', '!', '?', ':')):
+                for punct in ['. ', ' - ', ' | ']:
+                    pos = window.find(punct)
+                    if pos != -1:
+                        split_idx = search_start + pos + len(punct)
+                        before = h[:split_idx].strip()
+                        after = h[split_idx:].strip()
+                        if before and after and before[0].isupper() and after[0].isupper():
                             before = before.rstrip() + '. '
                             result = before + after
                 kept.append(result)
@@ -129,10 +180,10 @@ def merge_by_url(data):
             if k not in final:
                 final.append(k)
 
-        merged_headline = ". ".join(final) if len(final) > 1 else final[0]
-
+        merged_headline = ". ".join(final) if len(final) > 1 else (final[0] if final else "")
         merged.append({'headline': merged_headline, 'url': url})
     return merged
+
 def crawl(sources, header):
     href_list = []
     crawl_stats = {
@@ -155,19 +206,16 @@ def crawl(sources, header):
                         print(f"source: {source} not been able to crawl")
                         failure_reason = f"{resps.status_code} Error"
                         crawl_stats["failed"].append({"source": source, "reason": failure_reason})
-                        print("***************************************")
                         continue
                 except Exception as e:
-                    print(f"curl_cffi error on {source}: {e}")
-                    failure_reason = "Connection Error"
+                    print(f"source: {source} failed with: {e}")
+                    failure_reason = str(e)
                     crawl_stats["failed"].append({"source": source, "reason": failure_reason})
-                    print("***************************************")
                     continue
         except Exception as e:
-            print(f"httpx error on {source}: {e}")
-            failure_reason = "Connection Error"
+            print(f"source: {source} failed with: {e}")
+            failure_reason = str(e)
             crawl_stats["failed"].append({"source": source, "reason": failure_reason})
-            print("***************************************")
             continue
 
         soup = BeautifulSoup(resps.text, 'html.parser', parse_only=SoupStrainer('a'))
@@ -193,95 +241,242 @@ def crawl(sources, header):
         if resps.status_code == 200:
             print(f"{base_source} crawled ({source_count} items)")
             crawl_stats["successful"].append({"source": source, "count": source_count})
-        print("***************************************")
-    # deduping
+
     href_list = [dict(t) for t in {tuple(d.items()) for d in href_list}]
     href_list = merge_by_url(href_list)
-    ensure_data_dir()
-    if os.environ.get("VERCEL"):
-        if not is_blob_configured():
-            print("Notice: Vercel Blob token not configured. Skipping upload to blob.")
-        else:
-            try:
-                client.put(
-                    "data/links.json",
-                    json.dumps(href_list),
-                    access="private",  # or "public" — now required
-                    content_type="application/json",
-                    overwrite=True,
-                    cache_control_max_age=0)
-            except Exception as e:
-                print(f"Error encountered: {e}")
-    else:
-        try:
-            with open(DATA_FILE, "w", encoding="utf-8") as f:
-                json.dump(href_list, f, indent=2, ensure_ascii=False)
-        except Exception as e:
-            print(f"Error encountered: {e}")
-
     for index, item in enumerate(href_list):
         item["id"] = index
     return {"news": href_list, "stats": crawl_stats}
 
-def load_news_data():
-    if os.environ.get("VERCEL"):
-        if not is_blob_configured():  # <--- MISSING CHECK
-            print("Error: Vercel Blob token not configured. Cannot load news data.")
-            return []
+# =============================================================
+# AUTHENTICATION ROUTES
+# =============================================================
 
-        try:
-            data = client.get("data/links.json", access='private', use_cache=False)
-            data = json.loads(data.content)
-            for index, item in enumerate(data):
-                item["id"] = index
-            return data
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(
+    request: Request,
+    next: Optional[str] = "/",
+    db: AsyncSession = Depends(get_db)
+):
+    current_user = await get_current_user_optional(request, db)
+    if current_user:
+        return RedirectResponse(url=next or "/", status_code=status.HTTP_303_SEE_OTHER)
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={"next_url": next, "error": None}
+    )
 
-        except Exception as e:
-            print(f"Error loading candidates: {e}")
-            return []
+@app.post("/login", response_class=HTMLResponse)
+async def handle_login(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    next: Optional[str] = "/",
+    db: AsyncSession = Depends(get_db)
+):
+    clean_email = email.strip().lower()
+    result = await db.execute(select(User).where(User.email == clean_email))
+    user = result.scalar_one_or_none()
 
-    else:
-        try:
-            ensure_data_dir()
-            if not DATA_FILE.exists():
-                return []
-            with open(DATA_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            for index, item in enumerate(data):
-                item["id"] = index
-            return data
-        except Exception as e:
-            print(f"Error loading candidates: {e}")
-            return []
+    if not user or not verify_password(password, user.hashed_password):
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={
+                "next_url": next,
+                "email": clean_email,
+                "error": "Invalid email or password."
+            },
+            status_code=400
+        )
 
+    if not user.is_active:
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={
+                "next_url": next,
+                "email": clean_email,
+                "error": "This account is inactive. Please contact an administrator."
+            },
+            status_code=403
+        )
 
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+    response = RedirectResponse(url=next or "/", status_code=status.HTTP_303_SEE_OTHER)
+    token = create_session_token(user.id)
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=token,
+        max_age=SESSION_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https"
+    )
+    return response
+
+@app.get("/register", response_class=HTMLResponse)
+async def register_page(
+    request: Request,
+    next: Optional[str] = "/",
+    db: AsyncSession = Depends(get_db)
+):
+    current_user = await get_current_user_optional(request, db)
+    if current_user:
+        return RedirectResponse(url=next or "/", status_code=status.HTTP_303_SEE_OTHER)
+
+    user_count = (await db.execute(select(func.count(User.id)))).scalar_one()
+    is_first_user = (user_count == 0)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="register.html",
+        context={
+            "next_url": next,
+            "is_first_user": is_first_user,
+            "error": None
+        }
+    )
+
+@app.post("/register", response_class=HTMLResponse)
+async def handle_register(
+    request: Request,
+    full_name: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    invite_code: Optional[str] = Form(None),
+    next: Optional[str] = "/",
+    db: AsyncSession = Depends(get_db)
+):
+    clean_email = email.strip().lower()
+    clean_name = full_name.strip()
+
+    user_count = (await db.execute(select(func.count(User.id)))).scalar_one()
+    is_first_user = (user_count == 0)
+
+    if not is_first_user:
+        if not invite_code or invite_code.strip() != INVITE_CODE_SECRET:
+            return templates.TemplateResponse(
+                request=request,
+                name="register.html",
+                context={
+                    "next_url": next,
+                    "is_first_user": False,
+                    "full_name": clean_name,
+                    "email": clean_email,
+                    "invite_code": invite_code,
+                    "error": "Invalid or missing invite/registration code."
+                },
+                status_code=403
+            )
+
+    if len(password) < 6:
+        return templates.TemplateResponse(
+            request=request,
+            name="register.html",
+            context={
+                "next_url": next,
+                "is_first_user": is_first_user,
+                "full_name": clean_name,
+                "email": clean_email,
+                "error": "Password must be at least 6 characters."
+            },
+            status_code=400
+        )
+
+    # Check for existing email
+    existing = (await db.execute(select(User).where(User.email == clean_email))).scalar_one_or_none()
+    if existing:
+        return templates.TemplateResponse(
+            request=request,
+            name="register.html",
+            context={
+                "next_url": next,
+                "is_first_user": is_first_user,
+                "full_name": clean_name,
+                "email": clean_email,
+                "error": "An account with this email already exists."
+            },
+            status_code=400
+        )
+
+    # Create new user
+    new_user = User(
+        email=clean_email,
+        full_name=clean_name,
+        hashed_password=hash_password(password),
+        is_admin=is_first_user,
+        is_active=True
+    )
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+
+    # If first user, migrate legacy file data into this account
+    if is_first_user:
+        await migrate_legacy_data_to_user(db, new_user.id)
+
+    # Auto sign in
+    response = RedirectResponse(url=next or "/", status_code=status.HTTP_303_SEE_OTHER)
+    token = create_session_token(new_user.id)
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=token,
+        max_age=SESSION_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https"
+    )
+    return response
+
+@app.post("/logout")
+async def handle_logout(request: Request):
+    response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+    response.delete_cookie(key=SESSION_COOKIE_NAME)
+    return response
+
+# =============================================================
+# APPLICATION PAGES (AUTHENTICATED)
+# =============================================================
 
 @app.get("/", response_class=HTMLResponse)
-async def home_page(request: Request):
-    news = load_news_data()
-    settings = load_settings()
+async def home_page(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    news = await get_user_crawled_news(db, current_user.id)
+    settings = await get_user_settings(db, current_user.id)
     return templates.TemplateResponse(
         request=request,
         name="home.html",
-        context={"news": news, "settings": settings}
+        context={"news": news, "settings": settings, "user": current_user}
     )
 
 @app.get("/setting", response_class=HTMLResponse)
-async def setting_page(request: Request):
-    settings = load_settings()
+async def setting_page(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    settings = await get_user_settings(db, current_user.id)
     return templates.TemplateResponse(
         request=request,
         name="setting.html",
-        context={"settings": settings}
+        context={"settings": settings, "user": current_user}
     )
 
 @app.post("/crawl", response_class=HTMLResponse)
 @app.get("/crawl", response_class=HTMLResponse)
-async def crawl_news(request: Request):
-    settings = load_settings()
+async def crawl_news(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    settings = await get_user_settings(db, current_user.id)
     sources = settings.sources
     crawl_result = crawl(sources, custom_headers)
+    await save_user_crawled_news(db, current_user.id, crawl_result["news"])
     return templates.TemplateResponse(
         request=request,
         name="home.html",
@@ -289,16 +484,20 @@ async def crawl_news(request: Request):
             "news": crawl_result["news"],
             "crawl_stats": crawl_result["stats"],
             "status_msg": "Crawled and refreshed news sources!",
-            "settings": settings
+            "settings": settings,
+            "user": current_user
         }
     )
 
-
 @app.post("/filter", response_class=HTMLResponse)
 @app.get("/filter", response_class=HTMLResponse)
-async def filter_news(request: Request):
-    settings = load_settings()
-    news = load_news_data()
+async def filter_news(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    settings = await get_user_settings(db, current_user.id)
+    news = await get_user_crawled_news(db, current_user.id)
     keywords = [k.lower().strip() for k in settings.keywords if k.strip()]
     
     if not keywords:
@@ -318,38 +517,100 @@ async def filter_news(request: Request):
             "news": filtered,
             "status_msg": status_msg,
             "is_filtered": True,
-            "settings": settings
+            "settings": settings,
+            "user": current_user
         }
     )
 
-def save_raw_selected_news(items: list[dict]):
-    ensure_data_dir()
-    if os.environ.get("VERCEL"):
-        if not is_blob_configured():
-            print("Notice: Vercel Blob token not configured. Skipping upload to blob.")
-        else:
-            try:
-                client.put(
-                    "data/selected_news.json",
-                    json.dumps(items, ensure_ascii=False),
-                    access="private",
-                    content_type="application/json",
-                    overwrite=True,
-                    cache_control_max_age=0
-                )
-            except Exception as e:
-                print(f"Error saving raw selected news to blob: {e}")
-    else:
-        try:
-            with open(SELECTED_NEWS_FILE, "w", encoding="utf-8") as f:
-                json.dump(items, f, indent=2, ensure_ascii=False)
-        except Exception as e:
-            print(f"Error saving raw selected news to file: {e}")
+@app.get("/saved", response_class=HTMLResponse)
+async def saved_stories_page(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    stories = await get_user_saved_stories(db, current_user.id)
+    return templates.TemplateResponse(
+        request=request,
+        name="saved_stories.html",
+        context={"stories": stories, "user": current_user}
+    )
 
-def save_selected_news(items: list[dict]):
-    ensure_data_dir()
+@app.delete("/api/story/saved/{index}")
+async def delete_saved_story(
+    index: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    stories = await get_user_saved_stories(db, current_user.id)
+    if index < 0 or index >= len(stories):
+        raise HTTPException(status_code=404, detail="Saved story not found.")
+    
+    target = stories[index]
+    target_heading = (target.get("heading") or target.get("headline") or "").strip()
+    target_url = (target.get("url") or "").strip()
+
+    # Find and delete row from DB
+    result = await db.execute(
+        select(UserSavedStory).where(UserSavedStory.user_id == current_user.id)
+    )
+    records = result.scalars().all()
+    for rec in records:
+        if (target_url and rec.url == target_url) or (not target_url and rec.heading == target_heading):
+            await db.delete(rec)
+            await db.commit()
+            break
+
+    return {"status": "success", "message": "Saved story deleted.", "removed": target}
+
+@app.get("/story", response_class=HTMLResponse)
+async def story_page(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    stories = await get_user_selected_stories(db, current_user.id)
+    saved_idx = request.query_params.get("saved_index")
+    if saved_idx is not None:
+        try:
+            s_idx = int(saved_idx)
+            saved_stories = await get_user_saved_stories(db, current_user.id)
+            if 0 <= s_idx < len(saved_stories):
+                chosen_saved = saved_stories[s_idx]
+                matched_in_selected = next(
+                    (i for i, s in enumerate(stories) 
+                     if (s.get("url") and s.get("url") == chosen_saved.get("url")) or 
+                        ((s.get("heading") or s.get("headline")) == (chosen_saved.get("heading") or chosen_saved.get("headline")))),
+                    None
+                )
+                if matched_in_selected is None:
+                    stories.insert(0, chosen_saved)
+                    await save_user_selected_stories(db, current_user.id, stories)
+        except Exception as e:
+            print(f"Error loading saved story into studio: {e}")
+
+    return templates.TemplateResponse(
+        request=request,
+        name="story.html",
+        context={"stories": stories, "user": current_user}
+    )
+
+@app.post("/process", response_class=RedirectResponse)
+async def process_news(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    selected_news: list[int] = Form(default=[]),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    news = await get_user_crawled_news(db, current_user.id)
+    selected_items = []
+    for index in selected_news:
+        matched = next((item for item in news if item.get("id") == index), None)
+        if matched:
+            selected_items.append(matched)
+
     clean_items = []
-    for it in items:
+    for it in selected_items:
         clean_it = {
             "heading": it.get("heading") or it.get("headline", ""),
             "url": it.get("url", ""),
@@ -366,200 +627,37 @@ def save_selected_news(items: list[dict]):
         if "tags" in it and it.get("tags"):
             clean_it["tags"] = it["tags"]
         clean_items.append(clean_it)
-    clean_items = detect_lang(clean_items)
-    save_raw_selected_news(clean_items)
 
-def load_selected_news():
-    if os.environ.get("VERCEL"):
-        if not is_blob_configured():
-            return []
-        try:
-            data = client.get("data/selected_news.json", access="private", use_cache=False)
-            return json.loads(data.content)
-        except Exception as e:
-            print(f"Error loading selected news from blob: {e}")
-            return []
-    else:
-        try:
-            ensure_data_dir()
-            if not SELECTED_NEWS_FILE.exists():
-                return []
-            with open(SELECTED_NEWS_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"Error loading selected news from file: {e}")
-            return []
+    user_settings = await get_user_settings(db, current_user.id)
+    clean_items = detect_lang(clean_items, user_settings.source_languages)
+    await save_user_selected_stories(db, current_user.id, clean_items)
 
-def load_saved_news():
-    """Load previously saved stories from saved_news.json."""
-    if os.environ.get("VERCEL"):
-        if not is_blob_configured():
-            return []
-        try:
-            data = client.get("data/saved_news.json", access="private", use_cache=False)
-            return json.loads(data.content)
-        except Exception as e:
-            print(f"Error loading saved news from blob: {e}")
-            return []
-    else:
-        try:
-            ensure_data_dir()
-            if not SAVED_NEWS_FILE.exists():
-                return []
-            with open(SAVED_NEWS_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"Error loading saved news from file: {e}")
-            return []
-
-def save_all_saved_news(saved_list: list[dict]):
-    """Persist the entire saved stories list to saved_news.json."""
-    ensure_data_dir()
-    if os.environ.get("VERCEL"):
-        if is_blob_configured():
-            try:
-                client.put(
-                    "data/saved_news.json",
-                    json.dumps(saved_list, ensure_ascii=False),
-                    access="private",
-                    content_type="application/json",
-                    overwrite=True,
-                    cache_control_max_age=0
-                )
-            except Exception as e:
-                print(f"Error saving saved news to blob: {e}")
-                raise HTTPException(status_code=500, detail="Failed to save stories to saved_news blob.")
-    else:
-        try:
-            with open(SAVED_NEWS_FILE, "w", encoding="utf-8") as f:
-                json.dump(saved_list, f, indent=2, ensure_ascii=False)
-        except Exception as e:
-            print(f"Error saving saved news to file: {e}")
-            raise HTTPException(status_code=500, detail="Failed to save stories to saved_news file.")
-
-def save_to_saved_news(story_dict: dict):
-    """
-    Save or update a story in saved_news.json.
-    Matches existing story by URL (if present) or by heading.
-    Updates the existing story or appends as a new entry.
-    """
-    saved_list = load_saved_news()
-    story_copy = dict(story_dict)
-
-    # Set ISO timestamp
-    story_copy["saved_at"] = datetime.now(timezone.utc).isoformat()
-
-    # Backfill image from blocks if missing
-    if not (story_copy.get("image") or "").strip() and story_copy.get("blocks"):
-        for b in story_copy["blocks"]:
-            if isinstance(b, dict) and b.get("type") == "image" and (b.get("url") or "").strip():
-                story_copy["image"] = b["url"].strip()
-                break
-
-    story_url = (story_copy.get("url") or "").strip()
-    story_heading = (story_copy.get("heading") or story_copy.get("headline") or "").strip()
-
-    match_idx = -1
-    for idx, item in enumerate(saved_list):
-        item_url = (item.get("url") or "").strip()
-        item_heading = (item.get("heading") or item.get("headline") or "").strip()
-
-        # Match by URL if present, otherwise by heading
-        if story_url and item_url and story_url == item_url:
-            match_idx = idx
-            break
-        elif not story_url and story_heading and item_heading and story_heading == item_heading:
-            match_idx = idx
-            break
-
-    if match_idx >= 0:
-        saved_list[match_idx] = story_copy
-    else:
-        saved_list.append(story_copy)
-
-    save_all_saved_news(saved_list)
-    return story_copy
-
-@app.get("/saved", response_class=HTMLResponse)
-async def saved_stories_page(request: Request):
-    stories = load_saved_news()
-    return templates.TemplateResponse(
-        request=request,
-        name="saved_stories.html",
-        context={"stories": stories}
-    )
-
-@app.delete("/api/story/saved/{index}")
-async def delete_saved_story(index: int):
-    stories = load_saved_news()
-    if index < 0 or index >= len(stories):
-        raise HTTPException(status_code=404, detail="Saved story not found.")
-    removed = stories.pop(index)
-    save_all_saved_news(stories)
-    return {"status": "success", "message": "Saved story deleted.", "removed": removed}
-
-@app.get("/story", response_class=HTMLResponse)
-async def story_page(request: Request):
-    stories = load_selected_news()
-    # Support loading a saved story into the active studio if requested via query param
-    saved_idx = request.query_params.get("saved_index")
-    if saved_idx is not None:
-        try:
-            s_idx = int(saved_idx)
-            saved_stories = load_saved_news()
-            if 0 <= s_idx < len(saved_stories):
-                chosen_saved = saved_stories[s_idx]
-                # Check if already present in stories by URL or heading
-                matched_in_selected = next(
-                    (i for i, s in enumerate(stories) 
-                     if (s.get("url") and s.get("url") == chosen_saved.get("url")) or 
-                        ((s.get("heading") or s.get("headline")) == (chosen_saved.get("heading") or chosen_saved.get("headline")))),
-                    None
-                )
-                if matched_in_selected is None:
-                    stories.insert(0, chosen_saved)
-                    save_raw_selected_news(stories)
-        except Exception as e:
-            print(f"Error loading saved story into studio: {e}")
-
-    return templates.TemplateResponse(
-        request=request,
-        name="story.html",
-        context={"stories": stories}
-    )
-
-@app.post("/process", response_class=RedirectResponse)
-async def process_news(
-    request: Request,
-    background_tasks: BackgroundTasks,
-    selected_news: list[int] = Form(default=[])):
-    news = load_news_data()
-    selected_items = []
-    for index in selected_news:
-        matched = next((item for item in news if item.get("id") == index), None)
-        if matched:
-            selected_items.append(matched)
-
-    save_selected_news(selected_items)
-    # Only run server-side background fetching in non-serverless environments.
-    # In Vercel serverless functions, background tasks freeze on redirect;
-    # the client-side progressive fetcher on /story handles fetching reliably.
-    if not os.environ.get("VERCEL"):
-        background_tasks.add_task(background_fetch_all_stories)
+    # Server-side progressive background fetcher per user
+    background_tasks.add_task(background_fetch_user_stories, current_user.id)
     return RedirectResponse(url="/story", status_code=status.HTTP_303_SEE_OTHER)
 
+# =============================================================
+# API ENDPOINTS (AUTHENTICATED)
+# =============================================================
+
 @app.get("/api/settings", response_model=AgentSettings)
-async def get_settings():
-    return load_settings()
+async def get_settings_api(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    return await get_user_settings(db, current_user.id)
 
 @app.post("/api/settings")
-async def save_all_settings(settings: AgentSettings):
+async def save_settings_api(
+    settings: AgentSettings,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     clean_source_languages = [l.strip() for l in settings.source_languages if l.strip()]
     clean_target_languages = [l.strip() for l in settings.target_languages if l.strip()]
     clean_sources = [s.strip() for s in settings.sources if s.strip()]
     clean_keywords = [k.strip() for k in settings.keywords if k.strip()]
     
-    # Deduplicate preserving order
     seen_sl = set()
     dedup_source_languages = [l for l in clean_source_languages if not (l.lower() in seen_sl or seen_sl.add(l.lower()))]
 
@@ -578,92 +676,55 @@ async def save_all_settings(settings: AgentSettings):
         sources=dedup_sources,
         keywords=dedup_keywords
     )
-    success = save_settings(updated)
+    success = await save_user_settings(db, current_user.id, updated)
     if not success:
         raise HTTPException(status_code=500, detail="Failed to save settings.")
     return {"status": "success", "message": "Settings saved successfully!", "settings": updated}
 
 @app.post("/api/story/update")
-async def update_story_item(payload: StoryUpdateRequest):
-    stories = load_selected_news()
+async def update_story_item(
+    payload: StoryUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    stories = await get_user_selected_stories(db, current_user.id)
     if payload.index < 0 or payload.index >= len(stories):
         raise HTTPException(status_code=404, detail="Story index out of range.")
     
     updated_dict = payload.story.model_dump()
     stories[payload.index] = updated_dict
 
-    # 1. Update in selected_news.json
-    ensure_data_dir()
-    if os.environ.get("VERCEL"):
-        if is_blob_configured():
-            try:
-                client.put(
-                    "data/selected_news.json",
-                    json.dumps(stories, ensure_ascii=False),
-                    access="private",
-                    content_type="application/json",
-                    overwrite=True,
-                    cache_control_max_age=0
-                )
-            except Exception as e:
-                print(f"Error updating selected news to blob: {e}")
-                raise HTTPException(status_code=500, detail="Failed to save story to blob.")
-    else:
-        try:
-            with open(SELECTED_NEWS_FILE, "w", encoding="utf-8") as f:
-                json.dump(stories, f, indent=2, ensure_ascii=False)
-        except Exception as e:
-            print(f"Error updating selected news file: {e}")
-            raise HTTPException(status_code=500, detail="Failed to save story to file.")
+    # 1. Update in active studio selection
+    await save_user_selected_stories(db, current_user.id, stories)
 
-    # 2. Update/append in saved_news.json
-    saved_entry = save_to_saved_news(updated_dict)
+    # 2. Update/append in user's saved stories archive
+    saved_entry = await save_user_saved_story(db, current_user.id, updated_dict)
 
     return {"status": "success", "message": "Story saved successfully!", "story": saved_entry}
 
 @app.post("/api/story/save-all")
-async def save_all_stories(payload: StoryBatchSaveRequest):
+async def save_all_stories(
+    payload: StoryBatchSaveRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     items = [s.model_dump() for s in payload.stories]
+    user_settings = await get_user_settings(db, current_user.id)
 
-    # Auto-detect language only for stories where source_language is missing
     missing_lang = [it for it in items if not (it.get("source_language") or "").strip()]
     if missing_lang:
-        detected = detect_lang(missing_lang)
+        detected = detect_lang(missing_lang, user_settings.source_languages)
         for target, src in zip(missing_lang, detected):
             target["source_language"] = src.get("source_language", "")
 
-    ensure_data_dir()
-    if os.environ.get("VERCEL"):
-        if is_blob_configured():
-            try:
-                client.put(
-                    "data/selected_news.json",
-                    json.dumps(items, ensure_ascii=False),
-                    access="private",
-                    content_type="application/json",
-                    overwrite=True,
-                    cache_control_max_age=0
-                )
-            except Exception as e:
-                print(f"Error saving batch selected news to blob: {e}")
-                raise HTTPException(status_code=500, detail="Failed to save stories to blob.")
-        else:
-            raise HTTPException(status_code=500, detail="Vercel Blob token not configured.")
-    else:
-        try:
-            with open(SELECTED_NEWS_FILE, "w", encoding="utf-8") as f:
-                json.dump(items, f, indent=2, ensure_ascii=False)
-        except Exception as e:
-            print(f"Error saving batch selected news to file: {e}")
-            raise HTTPException(status_code=500, detail="Failed to save stories to file.")
-
+    await save_user_selected_stories(db, current_user.id, items)
     return {"status": "success", "count": len(items)}
 
-story_fetch_state = {
-    "status": "idle",
-    "total": 0,
-    "completed": 0
-}
+# =============================================================
+# STORY SCRAPING & LLM TRANSFORMATION
+# =============================================================
+
+story_fetch_state = defaultdict(lambda: {"status": "idle", "total": 0, "completed": 0})
 
 def scrape_article_from_url(url: str) -> dict:
     url = (url or "").strip()
@@ -671,7 +732,6 @@ def scrape_article_from_url(url: str) -> dict:
         return {}
 
     html_content = ""
-    # Try httpx first
     try:
         resp = httpx.get(url, headers=custom_headers, timeout=20, follow_redirects=True)
         if resp.status_code == 200 and len(resp.text) > 500:
@@ -679,7 +739,6 @@ def scrape_article_from_url(url: str) -> dict:
     except Exception as e:
         print(f"httpx fetch failed for {url}: {e}")
 
-    # Fallback to curl_cffi with chrome impersonation
     if not html_content:
         try:
             resp = requests.get(url, impersonate="chrome124", headers=dawn_headers, timeout=25)
@@ -747,82 +806,92 @@ def scrape_article_from_url(url: str) -> dict:
 
     og_site = soup.find("meta", property="og:site_name")
     sitename = (meta.sitename if meta and meta.sitename else None) or \
-               (og_site.get("content") if og_site else "")
+               (og_site.get("content") if og_site else None) or \
+               ""
+    if not sitename:
+        try:
+            from urllib.parse import urlparse
+            netloc = urlparse(url).netloc
+            sitename = netloc.replace("www.", "")
+        except Exception:
+            sitename = ""
 
     return {
-        "heading": heading,
-        "subheading": subheading,
-        "summary": "",
-        "content": body,
-        "author": author,
-        "date": date_str,
-        "image": image,
+        "url": url,
+        "heading": heading or "",
+        "subheading": subheading or "",
+        "content": body or "",
+        "image": image or "",
+        "author": author or "",
+        "date": date_str or "",
         "sitename": sitename,
         "blocks": []
     }
 
-def background_fetch_all_stories():
-    global story_fetch_state
-    try:
-        stories = load_selected_news()
-        if not stories:
-            story_fetch_state = {"status": "completed", "total": 0, "completed": 0}
-            return
+async def background_fetch_user_stories(user_id: int):
+    async with AsyncSessionLocal() as session:
+        try:
+            stories = await get_user_selected_stories(session, user_id)
+            if not stories:
+                story_fetch_state[user_id] = {"status": "completed", "total": 0, "completed": 0}
+                return
 
-        story_fetch_state = {
-            "status": "fetching",
-            "total": len(stories),
-            "completed": 0
-        }
+            story_fetch_state[user_id] = {
+                "status": "fetching",
+                "total": len(stories),
+                "completed": 0
+            }
 
-        for idx, story in enumerate(stories):
-            url = story.get("url", "").strip()
-            if url and url.startswith("http"):
-                try:
-                    fetched = scrape_article_from_url(url)
-                    if fetched:
-                        if fetched.get("heading"):
-                            story["heading"] = fetched["heading"]
-                        if fetched.get("subheading"):
-                            story["subheading"] = fetched["subheading"]
-                        if fetched.get("content"):
-                            story["content"] = fetched["content"]
-                        if fetched.get("author"):
-                            story["author"] = fetched["author"]
-                        if fetched.get("date"):
-                            story["date"] = fetched["date"]
-                        if fetched.get("sitename"):
-                            story["sitename"] = fetched["sitename"]
-                        if fetched.get("image"):
-                            story["image"] = fetched["image"]
+            for idx, story in enumerate(stories):
+                url = story.get("url", "").strip()
+                if url and url.startswith("http"):
+                    try:
+                        fetched = scrape_article_from_url(url)
+                        if fetched:
+                            if fetched.get("heading"):
+                                story["heading"] = fetched["heading"]
+                            if fetched.get("subheading"):
+                                story["subheading"] = fetched["subheading"]
+                            if fetched.get("content"):
+                                story["content"] = fetched["content"]
+                            if fetched.get("author"):
+                                story["author"] = fetched["author"]
+                            if fetched.get("date"):
+                                story["date"] = fetched["date"]
+                            if fetched.get("sitename"):
+                                story["sitename"] = fetched["sitename"]
+                            if fetched.get("image"):
+                                story["image"] = fetched["image"]
 
-                        img_url = (story.get("image") or "").strip()
-                        if img_url:
-                            if not isinstance(story.get("blocks"), list):
-                                story["blocks"] = []
-                            existing_img = next((b for b in story["blocks"] if isinstance(b, dict) and b.get("type") == "image" and b.get("url") == img_url), None)
-                            if not existing_img:
-                                import time
-                                story["blocks"].append({
-                                    "id": f"block_{int(time.time() * 1000)}_{idx}",
-                                    "type": "image",
-                                    "url": img_url,
-                                    "caption": story.get("subheading") or story.get("heading") or "News story visual coverage",
-                                    "source": story.get("sitename") or story.get("author") or "Source Wire / Photo"
-                                })
-                except Exception as e:
-                    print(f"Error background fetching story {idx} ({url}): {e}")
-            story_fetch_state["completed"] = idx + 1
-            # Save progress as each story is fetched
-            save_raw_selected_news(stories)
+                            img_url = (story.get("image") or "").strip()
+                            if img_url:
+                                if not isinstance(story.get("blocks"), list):
+                                    story["blocks"] = []
+                                existing_img = next((b for b in story["blocks"] if isinstance(b, dict) and b.get("type") == "image" and b.get("url") == img_url), None)
+                                if not existing_img:
+                                    import time
+                                    story["blocks"].append({
+                                        "id": f"block_{int(time.time() * 1000)}_{idx}",
+                                        "type": "image",
+                                        "url": img_url,
+                                        "caption": story.get("subheading") or story.get("heading") or "News story visual coverage",
+                                        "source": story.get("sitename") or story.get("author") or "Source Wire / Photo"
+                                    })
+                    except Exception as e:
+                        print(f"Error background fetching story {idx} ({url}): {e}")
+                story_fetch_state[user_id]["completed"] = idx + 1
+                await save_user_selected_stories(session, user_id, stories)
 
-        story_fetch_state["status"] = "completed"
-    except Exception as outer_e:
-        print(f"Fatal error in background_fetch_all_stories: {outer_e}")
-        story_fetch_state["status"] = "completed"
+            story_fetch_state[user_id]["status"] = "completed"
+        except Exception as outer_e:
+            print(f"Fatal error in background_fetch_user_stories: {outer_e}")
+            story_fetch_state[user_id]["status"] = "completed"
 
 @app.post("/api/story/fetch")
-async def fetch_story_from_url(payload: StoryFetchRequest):
+async def fetch_story_from_url(
+    payload: StoryFetchRequest,
+    current_user: User = Depends(get_current_user)
+):
     url = (payload.url or "").strip()
     if not url or not url.startswith("http"):
         raise HTTPException(status_code=400, detail="A valid HTTP/HTTPS URL is required.")
@@ -837,28 +906,25 @@ async def fetch_story_from_url(payload: StoryFetchRequest):
     }
 
 @app.get("/api/story/status")
-async def get_story_fetch_status():
-    stories = load_selected_news()
+async def get_story_fetch_status(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    stories = await get_user_selected_stories(db, current_user.id)
+    u_state = story_fetch_state[current_user.id]
     return {
-        "status": story_fetch_state.get("status", "idle"),
-        "total": story_fetch_state.get("total", len(stories)),
-        "completed": story_fetch_state.get("completed", 0),
+        "status": u_state.get("status", "idle"),
+        "total": u_state.get("total", len(stories)),
+        "completed": u_state.get("completed", 0),
         "stories": stories
     }
 
-
-# ==========================================
-# LLM STORY TRANSFORMATION ENDPOINT
-# ==========================================
-
 def _get_gemini_client():
-    """Lazily initialize Gemini client."""
     api_key = os.environ.get("GEMINI_API_KEY", "").strip()
     if not api_key:
         return None
     from google import genai
     return genai.Client(api_key=api_key)
-
 
 TRANSFORM_SYSTEM_PROMPT = """You are an expert editorial assistant for a professional news agency.
 You transform news stories based on the user's instructions.
@@ -882,10 +948,11 @@ Rules:
 - If the user asks you to translate, translate ALL three fields to the target language.
 - Maintain proper formatting and paragraph structure in the body field."""
 
-
 @app.post("/api/story/transform")
-async def transform_story(payload: StoryTransformRequest):
-    """Transform a story using Gemini LLM based on user chat instructions."""
+async def transform_story(
+    payload: StoryTransformRequest,
+    current_user: User = Depends(get_current_user)
+):
     gemini_client = _get_gemini_client()
     if not gemini_client:
         raise HTTPException(
@@ -893,10 +960,7 @@ async def transform_story(payload: StoryTransformRequest):
             detail="Gemini API key not configured. Please add GEMINI_API_KEY to your .env.local file."
         )
 
-    # Build conversation contents for multi-turn
     contents = []
-
-    # Add conversation history (last 10 messages)
     history = payload.messages[-10:] if len(payload.messages) > 10 else payload.messages
     for msg in history:
         contents.append({
@@ -904,7 +968,6 @@ async def transform_story(payload: StoryTransformRequest):
             "parts": [{"text": msg.content}]
         })
 
-    # Build current user message with story context
     story_context = f"""Here is the current story:
 
 HEADING: {payload.heading}
@@ -944,26 +1007,20 @@ Respond with ONLY a JSON object containing the transformed "heading", "subheadin
         )
 
         response_text = response.text.strip()
-
-        # Try to extract JSON from the response (handle markdown code blocks)
         json_text = response_text
         if json_text.startswith("```"):
-            # Remove markdown code block wrappers
             lines = json_text.split("\n")
-            # Remove first line (```json or ```) and last line (```)
             lines = [l for l in lines if not l.strip().startswith("```")]
             json_text = "\n".join(lines).strip()
 
         try:
             result = json.loads(json_text)
         except json.JSONDecodeError:
-            # If JSON parsing fails, return the raw text as an error
             raise HTTPException(
                 status_code=422,
                 detail=f"LLM returned invalid JSON. Raw response: {response_text[:500]}"
             )
 
-        # Validate expected fields
         transformed = {
             "heading": result.get("heading", payload.heading),
             "subheading": result.get("subheading", payload.subheading),

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#FBFBFA]">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account — Media Agent</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            serif: ['Newsreader', 'Georgia', 'serif'],
+            mono: ['"JetBrains Mono"', 'Menlo', 'Monaco', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-full bg-[#FBFBFA] text-[#121316] antialiased flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+  <div class="sm:mx-auto sm:w-full sm:max-w-md">
+    <!-- Brand Mark -->
+    <div class="flex justify-center">
+      <div class="w-12 h-12 rounded-xl bg-stone-900 flex items-center justify-center text-white shadow-md">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/>
+          <path d="M18 14h-8"/>
+          <path d="M15 18h-5"/>
+          <path d="M10 6h8v4h-8V6Z"/>
+        </svg>
+      </div>
+    </div>
+    <h2 class="mt-4 text-center text-2xl font-bold tracking-tight text-stone-900 font-sans">
+      Create Account
+    </h2>
+  </div>
+
+  <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+    <div class="bg-white py-8 px-6 shadow-sm border border-stone-200/90 rounded-2xl sm:px-10">
+      
+      {% if is_first_user %}
+      <div class="mb-5 rounded-lg bg-emerald-50 p-3.5 border border-emerald-200">
+        <div class="flex items-start gap-2.5">
+          <svg class="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+          </svg>
+          <div class="text-xs text-emerald-800">
+            <span class="font-semibold">Initial Setup:</span> No users exist yet. This first registration will automatically be configured as the <strong>Super Administrator</strong> without requiring an invite code.
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if error %}
+      <div class="mb-5 rounded-lg bg-red-50 p-3.5 border border-red-200">
+        <div class="flex items-center gap-2.5">
+          <svg class="h-4 w-4 text-red-600 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+          </svg>
+          <span class="text-xs font-medium text-red-800">{{ error }}</span>
+        </div>
+      </div>
+      {% endif %}
+
+      <form class="space-y-4" action="/register" method="POST">
+        <input type="hidden" name="next" value="{{ next_url or '/' }}">
+
+        <div>
+          <label for="full_name" class="block text-xs font-semibold text-stone-700 uppercase tracking-wider font-mono">
+            Full Name
+          </label>
+          <div class="mt-1.5">
+            <input 
+              id="full_name" 
+              name="full_name" 
+              type="text" 
+              required 
+              value="{{ full_name or '' }}"
+              placeholder="Jane Editor"
+              class="block w-full rounded-lg border border-stone-300 px-3.5 py-2 text-stone-900 shadow-2xs placeholder:text-stone-400 focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900 text-sm"
+            >
+          </div>
+        </div>
+
+        <div>
+          <label for="email" class="block text-xs font-semibold text-stone-700 uppercase tracking-wider font-mono">
+            Email address
+          </label>
+          <div class="mt-1.5">
+            <input 
+              id="email" 
+              name="email" 
+              type="email" 
+              autocomplete="email" 
+              required 
+              value="{{ email or '' }}"
+              placeholder="jane@newsroom.com"
+              class="block w-full rounded-lg border border-stone-300 px-3.5 py-2 text-stone-900 shadow-2xs placeholder:text-stone-400 focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900 text-sm"
+            >
+          </div>
+        </div>
+
+        <div>
+          <label for="password" class="block text-xs font-semibold text-stone-700 uppercase tracking-wider font-mono">
+            Password (min 6 chars)
+          </label>
+          <div class="mt-1.5">
+            <input 
+              id="password" 
+              name="password" 
+              type="password" 
+              autocomplete="new-password" 
+              required 
+              placeholder="••••••••"
+              class="block w-full rounded-lg border border-stone-300 px-3.5 py-2 text-stone-900 shadow-2xs placeholder:text-stone-400 focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900 text-sm"
+            >
+          </div>
+        </div>
+
+        {% if not is_first_user %}
+        <div>
+          <div class="flex items-center justify-between">
+            <label for="invite_code" class="block text-xs font-semibold text-stone-700 uppercase tracking-wider font-mono">
+              Invite / Registration Code
+            </label>
+            <span class="text-[10px] text-stone-400 font-mono">Required</span>
+          </div>
+          <div class="mt-1.5">
+            <input 
+              id="invite_code" 
+              name="invite_code" 
+              type="text" 
+              required 
+              value="{{ invite_code or '' }}"
+              placeholder="Enter invite code provided by admin"
+              class="block w-full rounded-lg border border-stone-300 px-3.5 py-2 text-stone-900 shadow-2xs placeholder:text-stone-400 focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900 text-sm font-mono"
+            >
+          </div>
+        </div>
+        {% endif %}
+
+        <div>
+          <button 
+            type="submit" 
+            class="mt-2 flex w-full justify-center rounded-lg bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white shadow-2xs hover:bg-stone-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900 transition-colors"
+          >
+            Create Account
+          </button>
+        </div>
+      </form>
+
+      <div class="mt-6 border-t border-stone-100 pt-5 text-center">
+        <p class="text-xs text-stone-500">
+          Already have an account?
+          <a href="/login{% if next_url %}?next={{ next_url }}{% endif %}" class="font-semibold text-stone-900 hover:underline">
+            Sign in
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
